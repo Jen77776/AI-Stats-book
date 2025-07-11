@@ -1,0 +1,27 @@
+project:
+  type: book
+
+book:
+  title: "biostats-sandbox"
+  author: "Norah Jones"
+  date: "2025/7/3"
+  chapters:
+    - index.qmd
+    - intro.qmd
+    - summary.qmd
+    - references.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme:
+      - cosmo
+      - brand
+  pdf:
+    documentclass: scrreprt
+
+
+
+resources:
+  - figure5.png
