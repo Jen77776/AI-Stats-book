@@ -7,14 +7,16 @@ import google.generativeai as genai
 from datetime import datetime
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-
+import os 
+from dotenv import load_dotenv 
+load_dotenv() 
 app = Flask(__name__)
 CORS(app)
 
 # --- Key Information ---
 # Warning: For security reasons, API keys should not be hard-coded.
 # In a real deployment, use environment variables or a secure key management service.
-GEMINI_API_KEY = 'AIzaSyB8dq777Y2RppZmElQKeVJxT5P4I7NmMV0'
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 try:
     genai.configure(api_key=GEMINI_API_KEY)
