@@ -6,9 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="课程助教">
+<meta name="author" content="Norah Jones">
+<meta name="dcterms.date" content="2025-07-03">
 
-<title>AI 即时反馈练习</title>
+<title>biostats-sandbox</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -24,30 +25,133 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="feedback-assignment_files/libs/clipboard/clipboard.min.js"></script>
-<script src="feedback-assignment_files/libs/quarto-html/quarto.js" type="module"></script>
-<script src="feedback-assignment_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="feedback-assignment_files/libs/quarto-html/popper.min.js"></script>
-<script src="feedback-assignment_files/libs/quarto-html/tippy.umd.min.js"></script>
-<script src="feedback-assignment_files/libs/quarto-html/anchor.min.js"></script>
-<link href="feedback-assignment_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="feedback-assignment_files/libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="feedback-assignment_files/libs/bootstrap/bootstrap.min.js"></script>
-<link href="feedback-assignment_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="feedback-assignment_files/libs/bootstrap/bootstrap-81267100e462c21b3d6c0d5bf76a3417.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./intro.html" rel="next">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-485d01fc63b59abcd3ee1bf1e8e2748d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
 
 
 </head>
 
-<body class="fullcontent quarto-light">
+<body class="nav-sidebar floating quarto-light">
 
-<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
-
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./index.html">Preface</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">biostats-sandbox</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./summary.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Summary</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./references.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">References</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#preface" id="toc-preface" class="nav-link active" data-scroll-target="#preface">Preface</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">AI 即时反馈练习</h1>
+<h1 class="title">biostats-sandbox</h1>
 </div>
 
 
@@ -57,10 +161,16 @@ ul.task-list li input[type="checkbox"] {
     <div>
     <div class="quarto-title-meta-heading">Author</div>
     <div class="quarto-title-meta-contents">
-             <p>课程助教 </p>
+             <p>Norah Jones </p>
           </div>
   </div>
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">July 3, 2025</p>
+    </div>
+  </div>
   
     
   </div>
@@ -70,110 +180,189 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="写作练习" class="level2">
-<h2 class="anchored" data-anchor-id="写作练习">写作练习</h2>
-<p>请阅读下面的问题提示，并写出一段简短的回答。完成后，点击“获取反馈”按钮，AI助教将会立即给你一些建议。</p>
-<p><strong>问题:</strong> <em>简要描述一下光合作用对地球生态系统的重要性。</em></p>
-<hr>
-<section id="你的回答" class="level3">
-<h3 class="anchored" data-anchor-id="你的回答">你的回答</h3>
-<style>
-    #student-answer {
-        width: 100%;
-        height: 180px;
-        margin-bottom: 15px;
-        font-family: sans-serif;
-        font-size: 16px;
-        padding: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-    }
-    #feedback-container {
-        border: 1px solid #e0e0e0;
-        padding: 15px;
-        margin-top: 20px;
-        background-color: #f9f9f9;
-        border-radius: 5px;
-        display: none; /* 初始隐藏 */
-    }
-    #feedback-result {
-        white-space: pre-wrap; /* 保持反馈的换行格式 */
-        font-size: 16px;
-        line-height: 1.6;
-    }
-    .loader {
-        border: 5px solid #f3f3f3;
-        border-top: 5px solid #3498db;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        display: none; /* 初始隐藏 */
-        margin: 20px auto;
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-</style>
-<form id="answer-form">
-<textarea id="student-answer" name="student_answer" placeholder="在这里输入你的答案..." required=""></textarea>
-<br> <button type="submit" class="btn btn-primary">获取反馈</button>
-</form>
-<div id="loader" class="loader">
+<section id="preface" class="level1 unnumbered">
+<h1 class="unnumbered">Preface</h1>
+<p>This is a Quarto book.</p>
+<p>To learn more about Quarto books visit <a href="https://quarto.org/docs/books" class="uri">https://quarto.org/docs/books</a>.</p>
 
-</div>
-<div id="feedback-container">
-<pre><code>&lt;h4&gt;AI 助教反馈:&lt;/h4&gt;
-&lt;div id="feedback-result"&gt;&lt;/div&gt;</code></pre>
-</div>
-<script>
-document.getElementById('answer-form').addEventListener('submit', function(event) {
-    event.preventDefault();
 
-    const studentAnswer = document.getElementById('student-answer').value;
-    const loader = document.getElementById('loader');
-    const feedbackContainer = document.getElementById('feedback-container');
-    const feedbackResult = document.getElementById('feedback-result');
 
-    // 显示加载动画，隐藏旧反馈
-    loader.style.display = 'block';
-    feedbackContainer.style.display = 'none';
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Visualization Challenge</title>
+    <style>
+        /* --- All CSS styles remain the same --- */
+        .dv-challenge-widget { font-family: system-ui, sans-serif; max-width: 700px; margin: 2em auto; border: 1px solid #e0e0e0; border-radius: 12px; padding: 2.5em; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #fff; line-height: 1.6; color: #333; }
+        .dv-challenge-widget h1 { font-size: 1.75em; font-weight: 600; margin-top: 0; margin-bottom: 1em; color: #1a1a1a; }
+        .dv-challenge-widget h4 { font-size: 1.1em; font-weight: 600; color: #2c2c2c; margin-top: 0; margin-bottom: 0.5em; }
+        #question-container { background-color: #f9fafb; padding: 1.5em; border-radius: 8px; margin-bottom: 1.5em; border: 1px solid #e5e7eb; }
+        #question-text { font-style: italic; color: #4b5563; }
+        #chart-image { width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; margin-top: 1em; }
+        #feedback-container { border: 1px solid #d1fae5; padding: 1.5em; margin-top: 1.5em; background-color: #f0fdf4; border-radius: 8px; display: none; }
+        #feedback-result { white-space: pre-wrap; font-size: 1em; color: #374151; }
+        #student-answer { width: 100%; box-sizing: border-box; height: 150px; margin-bottom: 1em; font-size: 1em; padding: 12px; border-radius: 6px; border: 1px solid #d1d5db; resize: vertical; transition: border-color 0.2s, box-shadow 0.2s; }
+        #student-answer:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(59,130,246,0.25); }
+        button { background-color: #2563eb; color: white; padding: 12px 20px; border: none; border-radius: 6px; font-size: 1em; font-weight: 500; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: #1d4ed8; }
+        .loader { border: 5px solid #e5e7eb; border-top: 5px solid #2563eb; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; display: none; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 
-    // !! 关键: 这是我们本地后端服务器的地址 !!
-    const apiUrl = '[http://127.0.0.1:5000/api/feedback](http://127.0.0.1:5000/api/feedback)';
 
-    fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ answer: studentAnswer }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        loader.style.display = 'none';
-        if (data.feedback) {
+    <div class="dv-challenge-widget">
+        <h1>Data Visualization Challenge</h1>
+        
+        <div id="question-container">
+            <strong>Question:</strong>
+            <p id="question-text">Examine their plot and find at least three bad data viz practices. Then say which one you think is the worst and why.</p>
+            <img src="figure5.png" id="chart-image" alt="Misleading Data Visualization Chart">
+        </div>
+        
+        <form id="answer-form">
+            <div style="margin-bottom: 1em;">
+                <label for="student-id" style="font-weight: 500; font-size: 0.9em;">Student ID (Optional):</label><br>
+                <input type="text" id="student-id" name="student_id" placeholder="Enter your X.500" style="width: 50%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+            </div>
+            <label for="student-answer" style="font-weight: 500; font-size: 0.9em;">Your Critique:</label><br>
+            <textarea id="student-answer" name="student_answer" placeholder="Enter your critique here..." required=""></textarea><br>
+            <button type="submit">Submit for Feedback</button>
+        </form>
+
+        <div class="loader" id="loader"></div>
+
+        <div id="feedback-container">
+            <h4 class="anchored" data-anchor-id="preface">AI Teaching Assistant Feedback:</h4>
+            <div id="feedback-result"></div>
+        </div>
+        
+        <div id="rating-container" style="display: none; margin-top: 1.5em; padding-top: 1.5em; border-top: 1px solid #e5e7eb;">
+            <h4 class="anchored">Rate this Feedback (Optional)</h4>
+            <form id="rating-form">
+                <div style="margin-bottom: 0.5em;">
+                    <label>Rating:</label>
+                    <input type="radio" name="rating" value="1" required=""> 1
+                    <input type="radio" name="rating" value="2"> 2
+                    <input type="radio" name="rating" value="3"> 3
+                    <input type="radio" name="rating" value="4"> 4
+                    <input type="radio" name="rating" value="5"> 5
+                </div>
+                <div style="margin-top: 1em;">
+                    <label for="rating-comment" style="display: block; margin-bottom: 0.5em;">Comments:</label>
+                    <textarea id="rating-comment" style="width: 100%; height: 60px; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"></textarea>
+                </div>
+                <button type="submit" style="margin-top: 1em;">Submit Rating</button>
+            </form>
+            <p id="rating-thanks" style="color: #16a34a; font-weight: 500; display: none;">Thanks for your feedback!</p>
+        </div>
+    </div>
+
+    <script>
+    // Scope all queries to the widget container to prevent conflicts.
+    const widget = document.querySelector('.dv-challenge-widget');
+    
+    // Cache all DOM elements we will need.
+    const answerForm = widget.querySelector('#answer-form');
+    const studentAnswerTextarea = widget.querySelector('#student-answer');
+    const studentIdInput = widget.querySelector('#student-id');
+    const loader = widget.querySelector('.loader');
+    const feedbackContainer = widget.querySelector('#feedback-container');
+    const feedbackResult = widget.querySelector('#feedback-result');
+    const ratingContainer = widget.querySelector('#rating-container');
+    const ratingForm = widget.querySelector('#rating-form');
+    const ratingThanks = widget.querySelector('#rating-thanks');
+
+    let currentResponseId = null; // Stores the ID of the current interaction.
+
+    // --- Event listener for the FIRST submission (student's answer) ---
+    answerForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const studentAnswer = studentAnswerTextarea.value;
+        const studentId = studentIdInput.value;
+        if (!studentAnswer.trim()) return;
+
+        // Reset UI for new submission
+        loader.style.display = 'block';
+        feedbackContainer.style.display = 'none';
+        ratingContainer.style.display = 'none';
+        ratingForm.style.display = 'block';
+        ratingThanks.style.display = 'none';
+        
+        // Ensure this URL is the correct, absolute path
+        const apiUrl = 'https://ai-stats-book.onrender.com/api/evaluate-dataviz';
+
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                answer: studentAnswer,
+                student_id: studentId
+            }),
+        })
+        .then(response => {
+            if (!response.ok) { throw new Error('Network response was not ok'); }
+            return response.json();
+        })
+        .then(data => {
+            loader.style.display = 'none';
             feedbackResult.innerText = data.feedback;
             feedbackContainer.style.display = 'block';
-        } else {
-            feedbackResult.innerText = '抱歉，获取反馈失败。' + (data.error || '');
+
+            if (data.response_id) {
+                currentResponseId = data.response_id;
+                ratingContainer.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            loader.style.display = 'none';
+            console.error('Fetch Error:', error);
+            feedbackResult.innerText = 'A connection or processing error occurred. Please check the Flask server terminal for detailed information.';
             feedbackContainer.style.display = 'block';
-        }
-    })
-    .catch((error) => {
-        loader.style.display = 'none';
-        console.error('Error:', error);
-        feedbackResult.innerText = '发生连接错误，请确认后端服务器是否正在运行。';
-        feedbackContainer.style.display = 'block';
+        });
     });
-});
+
+    // --- Event listener for the SECOND submission (rating the AI) ---
+    ratingForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const selectedRating = ratingForm.querySelector('input[name="rating"]:checked');
+        const comment = widget.querySelector('#rating-comment').value;
+
+        if (!selectedRating) {
+            alert("Please select a 1-5 rating.");
+            return;
+        }
+
+        const ratingData = {
+            response_id: currentResponseId,
+            rating: parseInt(selectedRating.value, 10),
+            comment: comment
+        };
+        
+        // CORRECTED: Ensure this URL is also a valid, absolute string
+        fetch('https://ai-stats-book.onrender.com/api/rate-feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(ratingData),
+        })
+        .then(response => {
+            if (response.ok) {
+                ratingForm.style.display = 'none';
+                ratingThanks.style.display = 'block';
+            } else {
+                alert("There was an issue submitting your rating. Please try again.");
+            }
+        })
+        .catch(error => console.error('Rating submission error:', error));
+    });
 </script>
-</section>
+
+
+
+
 </section>
 
-</main>
-<!-- /main column -->
+</main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
@@ -573,6 +762,15 @@ document.getElementById('answer-form').addEventListener('submit', function(event
     }
   });
   </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./intro.html" class="pagination-link" aria-label="Introduction">
+        <span class="nav-page-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
 </div> <!-- /content -->
 
 
