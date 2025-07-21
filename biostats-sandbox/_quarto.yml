@@ -18,10 +18,6 @@ format:
     theme:
       - cosmo
       - brand
-  pdf:
-    documentclass: scrreprt
-
-
 
 resources:
   - figure5.png
