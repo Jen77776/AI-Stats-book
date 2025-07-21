@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pure HTML Test Page</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; }
+        #student-answer {
+            width: 100%;
+            height: 180px;
+            margin-bottom: 15px;
+            font-family: sans-serif;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        #feedback-container {
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            display: none; /* Initially hidden */
+        }
+        #feedback-result {
+            white-space: pre-wrap; /* Preserves line breaks in the feedback */
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: none; /* Initially hidden */
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Instant Feedback Test</h1>
+    <p>This is a pure HTML page for direct testing, bypassing Quarto.</p>
+    
+    <form id="answer-form">
+        <textarea id="student-answer" name="student_answer" placeholder="Enter your answer here..." required></textarea><br>
+        <button type="submit">Get Feedback</button>
+    </form>
+
+    <div class="loader" id="loader"></div>
+
+    <div id="feedback-container">
+        <h4>AI Teaching Assistant Feedback:</h4>
+        <div id="feedback-result"></div>
+    </div>
+
+    <script>
+    document.getElementById('answer-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const studentAnswer = document.getElementById('student-answer').value;
+        const loader = document.getElementById('loader');
+        const feedbackContainer = document.getElementById('feedback-container');
+        const feedbackResult = document.getElementById('feedback-result');
+
+        loader.style.display = 'block';
+        feedbackContainer.style.display = 'none';
+
+        // NOTE: Remember to change this URL to your deployed PythonAnywhere address when you go live!
+        const apiUrl = 'http://127.0.0.1:5000/api/feedback';
+
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ answer: studentAnswer }),
+        })
+        .then(response => {
+            if (!response.ok) { throw new Error('Network response was not ok'); }
+            return response.json();
+        })
+        .then(data => {
+            loader.style.display = 'none';
+            feedbackResult.innerText = data.feedback;
+            feedbackContainer.style.display = 'block';
+        })
+        .catch(error => {
+            loader.style.display = 'none';
+            console.error('Fetch Error:', error);
+            // This error message is also translated to English
+            feedbackResult.innerText = 'A connection or processing error occurred. Please check the Flask server terminal for detailed information.';
+            feedbackContainer.style.display = 'block';
+        });
+    });
+    </script>
+
+</body>
+</html>

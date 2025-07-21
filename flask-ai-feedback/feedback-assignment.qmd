@@ -1,0 +1,112 @@
+---
+title: "AI 即时反馈练习"
+author: "课程助教"
+format: html
+editor: source
+---
+
+## 写作练习
+
+请阅读下面的问题提示，并写出一段简短的回答。完成后，点击“获取反馈”按钮，AI助教将会立即给你一些建议。
+
+**问题:** *简要描述一下光合作用对地球生态系统的重要性。*
+
+---
+
+### 你的回答
+
+```{=html}
+<style>
+    #student-answer {
+        width: 100%;
+        height: 180px;
+        margin-bottom: 15px;
+        font-family: sans-serif;
+        font-size: 16px;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+    #feedback-container {
+        border: 1px solid #e0e0e0;
+        padding: 15px;
+        margin-top: 20px;
+        background-color: #f9f9f9;
+        border-radius: 5px;
+        display: none; /* 初始隐藏 */
+    }
+    #feedback-result {
+        white-space: pre-wrap; /* 保持反馈的换行格式 */
+        font-size: 16px;
+        line-height: 1.6;
+    }
+    .loader {
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        display: none; /* 初始隐藏 */
+        margin: 20px auto;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<form id="answer-form">
+    <textarea id="student-answer" name="student_answer" placeholder="在这里输入你的答案..." required></textarea><br>
+    <button type="submit" class="btn btn-primary">获取反馈</button>
+</form>
+
+<div class="loader" id="loader"></div>
+
+<div id="feedback-container">
+    <h4>AI 助教反馈:</h4>
+    <div id="feedback-result"></div>
+</div>
+
+<script>
+document.getElementById('answer-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const studentAnswer = document.getElementById('student-answer').value;
+    const loader = document.getElementById('loader');
+    const feedbackContainer = document.getElementById('feedback-container');
+    const feedbackResult = document.getElementById('feedback-result');
+
+    // 显示加载动画，隐藏旧反馈
+    loader.style.display = 'block';
+    feedbackContainer.style.display = 'none';
+
+    // !! 关键: 这是我们本地后端服务器的地址 !!
+    const apiUrl = 'http://127.0.0.1:5000/api/feedback';
+
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ answer: studentAnswer }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        loader.style.display = 'none';
+        if (data.feedback) {
+            feedbackResult.innerText = data.feedback;
+            feedbackContainer.style.display = 'block';
+        } else {
+            feedbackResult.innerText = '抱歉，获取反馈失败。' + (data.error || '');
+            feedbackContainer.style.display = 'block';
+        }
+    })
+    .catch((error) => {
+        loader.style.display = 'none';
+        console.error('Error:', error);
+        feedbackResult.innerText = '发生连接错误，请确认后端服务器是否正在运行。';
+        feedbackContainer.style.display = 'block';
+    });
+});
+</script>
