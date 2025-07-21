@@ -8,6 +8,7 @@ from datetime import datetime
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import os 
+from flask import Flask, request, jsonify, render_template
 from dotenv import load_dotenv 
 load_dotenv() 
 app = Flask(__name__)
@@ -17,6 +18,12 @@ CORS(app)
 # Warning: For security reasons, API keys should not be hard-coded.
 # In a real deployment, use environment variables or a secure key management service.
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+DB_PATH = os.path.join(app.instance_path, 'feedback.db')
+
+try:
+    os.makedirs(app.instance_path, exist_ok=True)
+except OSError:
+    pass
 
 try:
     genai.configure(api_key=GEMINI_API_KEY)
@@ -174,6 +181,7 @@ def append_to_google_sheet(row_data):
         print("Successfully appended a row to Google Sheet.")
     except Exception as e:
         print(f"Google Sheet write error: {e}")
+
 def update_gsheet_row(response_id, full_row_data):
     """Finds a row by its ID and updates it with new data."""
     try:
@@ -262,6 +270,60 @@ def rate_feedback():
         print(f"Rating submission error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
+
+@app.route('/api/get-all-feedback', methods=['GET'])
+def get_all_feedback():
+    """API endpoint to get all feedback data from the database."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        c.execute("SELECT * FROM responses ORDER BY timestamp DESC")
+        rows = c.fetchall()
+        conn.close()
+        return jsonify([dict(row) for row in rows])
+    except Exception as e:
+        print(f"Dashboard data fetch error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/get-summary', methods=['GET'])
+def get_summary():
+    """API endpoint to generate an AI-powered summary of all answers."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("SELECT student_answer FROM responses WHERE student_answer != ''")
+        answers = c.fetchall()
+        conn.close()
+
+        if not answers:
+            return jsonify({'summary': 'Not enough data to generate a summary.'})
+
+        all_answers_text = "\n\n---\n\n".join([ans[0] for ans in answers])
+
+        summary_prompt = f"""
+        You are an expert teaching assistant analyzing student responses for a data visualization critique.
+        Based on the following collection of student answers, please provide a concise, high-level summary for the instructor in markdown format.
+
+        Address these key points:
+        1.  **Overall Performance:** Briefly categorize the class's overall performance (e.g., Excellent, Good, Fair, Poor) and why.
+        2.  **Common Points of Confusion:** List 2-3 topics or concepts that students commonly misunderstood or failed to mention.
+        3.  **Creative/Insightful Answers:** Highlight one or two specific, creative, or insightful answers that stood out. Quote a small, impactful part of the answer.
+
+        Here are the student answers to analyze:
+        ---
+        {all_answers_text}
+        ---
+        """
+        summary_response = model.generate_content(summary_prompt)
+        return jsonify({'summary': summary_response.text})
+    except Exception as e:
+        print(f"Summary generation error: {e}")
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, host='0.0.0.0')

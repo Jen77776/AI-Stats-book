@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Dashboard</title>
+    <style>
+        body { font-family: system-ui, sans-serif; line-height: 1.6; background-color: #f4f4f9; color: #333; margin: 0; padding: 2em; }
+        .container { max-width: 1200px; margin: auto; background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1, h2 { color: #1a1a1a; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f8f8f8; font-weight: 600; }
+        tr:nth-child(even) { background-color: #f9fafb; }
+        .summary-box { background-color: #eef2ff; border-left: 5px solid #4f46e5; padding: 1.5em; margin-bottom: 2em; border-radius: 4px; }
+        button { background-color: #4f46e5; color: white; padding: 10px 15px; border: none; border-radius: 5px; font-size: 1em; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: #4338ca; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #4f46e5; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Instructor Dashboard</h1>
+
+        <div class="summary-section">
+            <h2>AI-Generated Summary</h2>
+            <button id="generate-summary-btn">Generate Class Summary</button>
+            <div class="loader" id="summary-loader"></div>
+            <div id="summary-content" class="summary-box" style="display: none;"></div>
+        </div>
+
+        <h2>All Student Responses</h2>
+        <div style="overflow-x:auto;">
+            <table id="feedback-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Timestamp</th>
+                        <th>Student ID</th>
+                        <th>Student Answer</th>
+                        <th>AI Feedback</th>
+                        <th>Rating</th>
+                        <th>Feedback Comment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const feedbackTableBody = document.querySelector('#feedback-table tbody');
+            const generateSummaryBtn = document.getElementById('generate-summary-btn');
+            const summaryLoader = document.getElementById('summary-loader');
+            const summaryContent = document.getElementById('summary-content');
+
+            // --- Function to fetch and display all feedback data ---
+            function fetchAndDisplayFeedback() {
+                fetch('/api/get-all-feedback')
+                    .then(response => response.json())
+                    .then(data => {
+                        feedbackTableBody.innerHTML = ''; // Clear existing rows
+                        data.forEach(row => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${row.id}</td>
+                                <td>${new Date(row.timestamp).toLocaleString()}</td>
+                                <td>${row.student_id || ''}</td>
+                                <td>${row.student_answer}</td>
+                                <td>${row.ai_feedback}</td>
+                                <td>${row.rating || ''}</td>
+                                <td>${row.feedback_comment || ''}</td>
+                            `;
+                            feedbackTableBody.appendChild(tr);
+                        });
+                    })
+                    .catch(error => console.error('Error fetching feedback data:', error));
+            }
+
+            // --- Function to fetch and display the AI summary ---
+            function fetchAndDisplaySummary() {
+                summaryLoader.style.display = 'block';
+                summaryContent.style.display = 'none';
+                generateSummaryBtn.disabled = true;
+
+                fetch('/api/get-summary')
+                    .then(response => response.json())
+                    .then(data => {
+                        summaryLoader.style.display = 'none';
+                        generateSummaryBtn.disabled = false;
+                        if (data.summary) {
+                            // Simple markdown-to-HTML conversion for display
+                            let formattedSummary = data.summary
+                                .replace(/### (.*)/g, '<h3>$1</h3>')
+                                .replace(/## (.*)/g, '<h2>$1</h2>')
+                                .replace(/# (.*)/g, '<h1>$1</h1>')
+                                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                                .replace(/\* ([^*]+)/g, '<li>$1</li>');
+                            summaryContent.innerHTML = formattedSummary;
+                            summaryContent.style.display = 'block';
+                        } else {
+                            summaryContent.innerText = data.error || 'An unknown error occurred.';
+                            summaryContent.style.display = 'block';
+                        }
+                    })
+                    .catch(error => {
+                        summaryLoader.style.display = 'none';
+                        generateSummaryBtn.disabled = false;
+                        console.error('Error fetching summary:', error)
+                    });
+            }
+
+            // --- Attach event listeners ---
+            generateSummaryBtn.addEventListener('click', fetchAndDisplaySummary);
+
+            // --- Initial data load ---
+            fetchAndDisplayFeedback();
+        });
+    </script>
+
+</body>
+</html>
