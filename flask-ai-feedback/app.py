@@ -43,7 +43,9 @@ def init_db():
             question TEXT NOT NULL,
             student_answer TEXT NOT NULL,
             ai_feedback TEXT NOT NULL,
-            timestamp DATETIME NOT NULL
+            timestamp DATETIME NOT NULL,
+            rating INTEGER,
+            feedback_comment TEXT
         )
     ''')
     conn.commit()
@@ -172,39 +174,93 @@ def append_to_google_sheet(row_data):
         print("Successfully appended a row to Google Sheet.")
     except Exception as e:
         print(f"Google Sheet write error: {e}")
+def update_gsheet_row(response_id, full_row_data):
+    """Finds a row by its ID and updates it with new data."""
+    try:
+        scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/drive']
+        creds = ServiceAccountCredentials.from_json_keyfile_name("google_credentials.json", scope)
+        client = gspread.authorize(creds)
+        sheet = client.open("AI Biostats Feedback").sheet1
+
+        # Find the cell that contains the unique response ID
+        # Assumes the 'id' is in the first column of your Google Sheet
+        cell = sheet.find(str(response_id), in_column=1)
+        if cell:
+            # gspread's update method takes a range and a list of lists.
+            # Example: update('A5:H5', [[ ... values ... ]])
+            start_col = gspread.utils.rowcol_to_a1(cell.row, 1)[0] # e.g., 'A'
+            end_col = gspread.utils.rowcol_to_a1(cell.row, len(full_row_data))[0] # e.g., 'H'
+            sheet.update(f'{start_col}{cell.row}:{end_col}{cell.row}', [full_row_data])
+            print(f"Successfully updated row {cell.row} in Google Sheet.")
+        else:
+            print(f"Warning: Could not find response_id {response_id} in Google Sheet to update.")
+    except Exception as e:
+        print(f"Google Sheet update error: {e}")
 
 @app.route('/api/evaluate-dataviz', methods=['POST'])
 def handle_dataviz_evaluation():
-    """ 新的API接口，专门处理数据可视化评估任务 """
     data = request.get_json()
-    if not data or 'answer' not in data:
-        return jsonify({'error': 'Request must include "answer"'}), 400
-
-    student_answer = data['answer']
+    student_answer = data.get('answer')
     student_id = data.get('student_id', 'anonymous')
     ai_feedback = get_dataviz_feedback(student_answer)
-
     question_text = "Critique of misleading data visualization (Figure 5)"
     timestamp = datetime.now()
+    response_id = None # Initialize response_id
 
-    # 1. write to SQLite database
+    # 1. Write initial data to SQLite
     try:
         conn = sqlite3.connect('feedback.db')
         c = conn.cursor()
         c.execute(
-            "INSERT INTO responses (student_id, question, student_answer, ai_feedback, timestamp) VALUES (?,?, ?, ?, ?)",
+            "INSERT INTO responses (student_id, question, student_answer, ai_feedback, timestamp) VALUES (?, ?, ?, ?, ?)",
             (student_id, question_text, student_answer, ai_feedback, timestamp)
         )
+        response_id = c.lastrowid # Get the ID of the row we just inserted
         conn.commit()
         conn.close()
     except Exception as e:
         print(f"Database write error: {e}")
 
-    # 2. write Google Sheet 
-    row_to_insert = [str(timestamp), student_id, question_text, student_answer, ai_feedback]
+    # 2. Write initial data to Google Sheet
+    # The new row will have empty placeholders for the rating and comment
+    row_to_insert = [response_id, str(timestamp), student_id, question_text, student_answer, ai_feedback, "", ""]
     append_to_google_sheet(row_to_insert)
 
-    return jsonify({'feedback': ai_feedback})
+    # Return the feedback AND the new ID to the frontend
+    return jsonify({'feedback': ai_feedback, 'response_id': response_id})
+
+# --- Add the new endpoint for receiving ratings ---
+@app.route('/api/rate-feedback', methods=['POST'])
+def rate_feedback():
+    data = request.get_json()
+    response_id = data.get('response_id')
+    rating = data.get('rating')
+    comment = data.get('comment', '')
+
+    # 1. Update the record in the SQLite database
+    try:
+        conn = sqlite3.connect('feedback.db')
+        c = conn.cursor()
+        c.execute(
+            "UPDATE responses SET rating = ?, feedback_comment = ? WHERE id = ?",
+            (rating, comment, response_id)
+        )
+        conn.commit()
+
+        # Fetch the entire updated row to sync with Google Sheets
+        updated_row_cursor = c.execute("SELECT * FROM responses WHERE id = ?", (response_id,))
+        full_updated_row = updated_row_cursor.fetchone()
+        conn.close()
+
+        # 2. Update the corresponding row in the Google Sheet
+        if full_updated_row:
+            # Convert the database tuple to a list of strings for gspread
+            update_gsheet_row(response_id, [str(item) for item in full_updated_row])
+
+        return jsonify({'status': 'success'}), 200
+    except Exception as e:
+        print(f"Rating submission error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
 if __name__ == '__main__':
