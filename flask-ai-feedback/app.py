@@ -11,7 +11,7 @@ import os
 from flask import Flask, request, jsonify, render_template
 from dotenv import load_dotenv 
 load_dotenv() 
-app = Flask(__name__)
+app = Flask(__name__, instance_relative_config=True, template_folder='templates')
 CORS(app)
 
 # --- Key Information ---
@@ -20,6 +20,7 @@ CORS(app)
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 DB_PATH = os.path.join(app.instance_path, 'feedback.db')
 
+# Ensure the instance folder exists for the database
 try:
     os.makedirs(app.instance_path, exist_ok=True)
 except OSError:
@@ -41,7 +42,7 @@ BIOSTAT_QUESTIONS = [
 ]
 
 def init_db():
-    conn = sqlite3.connect('feedback.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS responses (
@@ -100,7 +101,7 @@ def handle_feedback_request():
     question = data['question']
     ai_feedback = get_ai_feedback(question, student_answer)
     try:
-        conn = sqlite3.connect('feedback.db')
+        conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         c.execute(
             "INSERT INTO responses (question, student_answer, ai_feedback, timestamp) VALUES (?, ?, ?, ?)",
@@ -219,7 +220,7 @@ def handle_dataviz_evaluation():
 
     # 1. Write initial data to SQLite
     try:
-        conn = sqlite3.connect('feedback.db')
+        conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         c.execute(
             "INSERT INTO responses (student_id, question, student_answer, ai_feedback, timestamp) VALUES (?, ?, ?, ?, ?)",
@@ -249,7 +250,7 @@ def rate_feedback():
 
     # 1. Update the record in the SQLite database
     try:
-        conn = sqlite3.connect('feedback.db')
+        conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         c.execute(
             "UPDATE responses SET rating = ?, feedback_comment = ? WHERE id = ?",
