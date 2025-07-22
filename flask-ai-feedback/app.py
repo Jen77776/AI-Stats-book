@@ -58,6 +58,8 @@ def init_db():
     conn.commit()
     conn.close()
 
+init_db()
+
 @app.cli.command("init-db")
 def init_db_command():
     """clear existing data and initialize the database."""
