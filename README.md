@@ -6,7 +6,10 @@ The first prototype has been completed: an **evaluative chatbot** for a data vis
 
 **Google Sheet Link:** [https://docs.google.com/spreadsheets/d/1jCZQq9zPbldhaNbO2VgjZaWul8wsdyp8k94SCbUrfDM/edit?gid=0#gid=0](https://docs.google.com/spreadsheets/d/1jCZQq9zPbldhaNbO2VgjZaWul8wsdyp8k94SCbUrfDM/edit?gid=0#gid=0)
 
-**public url**[https://Jen77776.github.io/AI-Stats-book/](https://Jen77776.github.io/AI-Stats-book/)
+Live Quarto Book: https://jen77776.github.io/AI-Stats-book/
+
+Live Instructor Dashboard: https://ai-stats-book.onrender.com/dashboard
+
 ---
 
 ## 📁 Project Structure
