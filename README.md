@@ -10,6 +10,8 @@ Live Quarto Book: https://jen77776.github.io/AI-Stats-book/
 
 Live Instructor Dashboard: https://ai-stats-book.onrender.com/dashboard
 
+**public url**[https://Jen77776.github.io/AI-Stats-book/](https://Jen77776.github.io/AI-Stats-book/)
+**Dash board**[https://ai-stats-book.onrender.com/dashboard](https://ai-stats-book.onrender.com/dashboard)
 ---
 
 ## 📁 Project Structure
