@@ -25,9 +25,9 @@ answerForm.addEventListener('submit', function(event) {
     ratingThanks.style.display = 'none';
 
     // 用于本地测试:
-    const apiUrl = 'http://127.0.0.1:5001/api/evaluate-dataviz';
+    //const apiUrl = 'http://127.0.0.1:5001/api/evaluate-dataviz';
     // 用于线上部署:
-    // const apiUrl = 'https://ai-stats-book.onrender.com/api/evaluate-dataviz';
+     const apiUrl = 'https://ai-stats-book.onrender.com/api/evaluate-dataviz';
 
     fetch(apiUrl, {
         method: 'POST',
@@ -75,9 +75,9 @@ ratingForm.addEventListener('submit', function(event) {
     };
 
     // 用于本地测试:
-    const ratingApiUrl = 'http://127.0.0.1:5001/api/rate-feedback';
+    //const ratingApiUrl = 'http://127.0.0.1:5001/api/rate-feedback';
     // 用于线上部署:
-    // const ratingApiUrl = 'https://ai-stats-book.onrender.com/api/rate-feedback';
+    const ratingApiUrl = 'https://ai-stats-book.onrender.com/api/rate-feedback';
 
     fetch(ratingApiUrl, {
         method: 'POST',
