@@ -1,117 +1,48 @@
 # app.py
-import sqlite3
-import random
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import google.generativeai as genai
+import os
 from datetime import datetime
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+import google.generativeai as genai
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import os 
-from flask import Flask, request, jsonify, render_template
-from dotenv import load_dotenv 
-load_dotenv() 
+
+
+load_dotenv()
 app = Flask(__name__, instance_relative_config=True, template_folder='templates')
 CORS(app)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+print(f"--- DATABASE URI IN USE: {app.config['SQLALCHEMY_DATABASE_URI']} ---")
+
+class Response(db.Model):
+    __tablename__ = 'responses'
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.String(100))
+    question = db.Column(db.Text, nullable=False)
+    student_answer = db.Column(db.Text, nullable=False)
+    ai_feedback = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    rating = db.Column(db.Integer)
+    feedback_comment = db.Column(db.Text)
+
+with app.app_context():
+    db.create_all()
 
 # --- Key Information ---
 # Warning: For security reasons, API keys should not be hard-coded.
 # In a real deployment, use environment variables or a secure key management service.
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-DB_PATH = os.path.join(app.instance_path, 'feedback.db')
-
-# Ensure the instance folder exists for the database
-try:
-    os.makedirs(app.instance_path, exist_ok=True)
-except OSError:
-    pass
-
 try:
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel('gemini-1.5-flash')
 except Exception as e:
     print(f"API configuration failed: {e}")
     model = None
-
-BIOSTAT_QUESTIONS = [
-    "What is the primary purpose of the `t.test()` function in R? Please provide a simple example.",
-    "In R, what does a `p-value` of less than 0.05 typically signify in the context of hypothesis testing?",
-    "How would you use the `ggplot2` package in R to create a simple scatter plot showing the relationship between two variables?",
-    "When conducting a linear regression analysis in R, what do the 'Coefficients' in the output of the `lm()` function represent?",
-    "Please describe the main differences between a data frame and a matrix in the R language."
-]
-
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS responses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT,
-            question TEXT NOT NULL,
-            student_answer TEXT NOT NULL,
-            ai_feedback TEXT NOT NULL,
-            timestamp DATETIME NOT NULL,
-            rating INTEGER,
-            feedback_comment TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-init_db()
-
-@app.cli.command("init-db")
-def init_db_command():
-    """clear existing data and initialize the database."""
-    init_db()
-    print("Initialized the database.")
-
-@app.route('/api/get-question', methods=['GET'])
-def get_question():
-    question = random.choice(BIOSTAT_QUESTIONS)
-    return jsonify({'question': question})
-
-def get_ai_feedback(question, student_answer):
-    if not model:
-        return "AI model failed to load."
-    system_prompt = f"""
-    You are an expert Teaching Assistant for an 'Applied Biostatistics with R' course.
-    Your task is to evaluate a student's answer based on a specific question.
-    Provide constructive, helpful, and encouraging feedback in English.
-    First, briefly state if the core of the answer is correct or incorrect.
-    Then, explain why and provide the correct, ideal answer with R code examples if necessary.
-
-    The question was: "{question}"
-    """
-    prompt = f"{system_prompt}\n\nThe student's answer is:\n\"{student_answer}\""
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        print(f"Error calling Gemini API: {e}")
-        return "Sorry, an error occurred while getting feedback from the AI."
-
-@app.route('/api/feedback', methods=['POST'])
-def handle_feedback_request():
-    data = request.get_json()
-    if not data or 'answer' not in data or 'question' not in data:
-        return jsonify({'error': 'Request must include both "question" and "answer"'}), 400
-    student_answer = data['answer']
-    question = data['question']
-    ai_feedback = get_ai_feedback(question, student_answer)
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute(
-            "INSERT INTO responses (question, student_answer, ai_feedback, timestamp) VALUES (?, ?, ?, ?)",
-            (question, student_answer, ai_feedback, datetime.now())
-        )
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        print(f"Database write error: {e}")
-    return jsonify({'feedback': ai_feedback})
 
 
 def get_dataviz_feedback(student_answer):
@@ -214,32 +145,37 @@ def handle_dataviz_evaluation():
     student_answer = data.get('answer')
     student_id = data.get('student_id', 'anonymous')
     ai_feedback = get_dataviz_feedback(student_answer)
-    question_text = "Critique of misleading data visualization (Figure 5)"
-    timestamp = datetime.now()
-    response_id = None # Initialize response_id
 
-    # 1. Write initial data to SQLite
+    # --- 这是关键的修改 ---
+    # 我们将数据库操作包裹在try...except中
     try:
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute(
-            "INSERT INTO responses (student_id, question, student_answer, ai_feedback, timestamp) VALUES (?, ?, ?, ?, ?)",
-            (student_id, question_text, student_answer, ai_feedback, timestamp)
+        new_response = Response(
+            student_id=student_id,
+            question="Critique of misleading data visualization (Figure 5)",
+            student_answer=student_answer,
+            ai_feedback=ai_feedback,
+            timestamp=datetime.now()
         )
-        response_id = c.lastrowid # Get the ID of the row we just inserted
-        conn.commit()
-        conn.close()
+        db.session.add(new_response)
+        db.session.commit()
+
+        # 只有在数据库写入成功后，才继续写入Google Sheet
+        row_to_insert = [new_response.id, str(new_response.timestamp), student_id, new_response.question, student_answer, ai_feedback, "", ""]
+        append_to_google_sheet(row_to_insert)
+
+        return jsonify({'feedback': ai_feedback, 'response_id': new_response.id})
+
     except Exception as e:
-        print(f"Database write error: {e}")
-
-    # 2. Write initial data to Google Sheet
-    # The new row will have empty placeholders for the rating and comment
-    row_to_insert = [response_id, str(timestamp), student_id, question_text, student_answer, ai_feedback, "", ""]
-    append_to_google_sheet(row_to_insert)
-
-    # Return the feedback AND the new ID to the frontend
-    return jsonify({'feedback': ai_feedback, 'response_id': response_id})
-
+        # 如果数据库操作失败，回滚所有改动
+        db.session.rollback()
+        # 在终端打印出详细的错误信息
+        print(f"--- DATABASE WRITE FAILED ---: {e}")
+        # 仍然返回一个看起来“成功”的响应给前端，但附带错误信息
+        return jsonify({
+            'feedback': ai_feedback, 
+            'response_id': None,
+            'error': 'Database write operation failed.'
+        }), 500
 # --- Add the new endpoint for receiving ratings ---
 @app.route('/api/rate-feedback', methods=['POST'])
 def rate_feedback():
@@ -248,30 +184,22 @@ def rate_feedback():
     rating = data.get('rating')
     comment = data.get('comment', '')
 
-    # 1. Update the record in the SQLite database
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute(
-            "UPDATE responses SET rating = ?, feedback_comment = ? WHERE id = ?",
-            (rating, comment, response_id)
-        )
-        conn.commit()
+    response_to_update = Response.query.get(response_id)
+    if response_to_update:
+        response_to_update.rating = rating
+        response_to_update.feedback_comment = comment
+        db.session.commit()
 
-        # Fetch the entire updated row to sync with Google Sheets
-        updated_row_cursor = c.execute("SELECT * FROM responses WHERE id = ?", (response_id,))
-        full_updated_row = updated_row_cursor.fetchone()
-        conn.close()
-
-        # 2. Update the corresponding row in the Google Sheet
-        if full_updated_row:
-            # Convert the database tuple to a list of strings for gspread
-            update_gsheet_row(response_id, [str(item) for item in full_updated_row])
-
+        full_updated_row = [
+            response_to_update.id, str(response_to_update.timestamp), response_to_update.student_id,
+            response_to_update.question, response_to_update.student_answer, response_to_update.ai_feedback,
+            response_to_update.rating, response_to_update.feedback_comment
+        ]
+        update_gsheet_row(response_id, [str(item) for item in full_updated_row])
+        
         return jsonify({'status': 'success'}), 200
-    except Exception as e:
-        print(f"Rating submission error: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    
+    return jsonify({'status': 'error', 'message': 'Response not found'}), 404
 
 @app.route('/dashboard')
 def dashboard():
@@ -279,35 +207,28 @@ def dashboard():
 
 @app.route('/api/get-all-feedback', methods=['GET'])
 def get_all_feedback():
-    """API endpoint to get all feedback data from the database."""
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        c = conn.cursor()
-        c.execute("SELECT * FROM responses ORDER BY timestamp DESC")
-        rows = c.fetchall()
-        conn.close()
-        return jsonify([dict(row) for row in rows])
-    except Exception as e:
-        print(f"Dashboard data fetch error: {e}")
-        return jsonify({"error": str(e)}), 500
+    responses = Response.query.order_by(Response.timestamp.desc()).all()
+    output = []
+    for r in responses:
+        output.append({
+            'id': r.id, 'student_id': r.student_id, 'question': r.question,
+            'student_answer': r.student_answer, 'ai_feedback': r.ai_feedback,
+            'timestamp': r.timestamp.isoformat(), 'rating': r.rating,
+            'feedback_comment': r.feedback_comment
+        })
+    return jsonify(output)
 
 @app.route('/api/get-summary', methods=['GET'])
 def get_summary():
     """API endpoint to generate an AI-powered summary of all answers."""
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute("SELECT student_answer FROM responses WHERE student_answer != ''")
-        answers = c.fetchall()
-        conn.close()
+    # 使用SQLAlchemy查询
+    responses = Response.query.filter(Response.student_answer != '').all()
+    if not responses:
+        return jsonify({'summary': 'Not enough data to generate a summary.'})
 
-        if not answers:
-            return jsonify({'summary': 'Not enough data to generate a summary.'})
+    all_answers_text = "\n\n---\n\n".join([res.student_answer for res in responses])
 
-        all_answers_text = "\n\n---\n\n".join([ans[0] for ans in answers])
-
-        summary_prompt = f"""
+    summary_prompt = f"""
         You are an expert teaching assistant analyzing student responses for a data visualization critique.
         Based on the following collection of student answers, please provide a concise, high-level summary for the instructor in markdown format.
 
@@ -321,6 +242,7 @@ def get_summary():
         {all_answers_text}
         ---
         """
+    try:
         summary_response = model.generate_content(summary_prompt)
         return jsonify({'summary': summary_response.text})
     except Exception as e:
@@ -328,5 +250,6 @@ def get_summary():
         return jsonify({'error': str(e)}), 500
 
 
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000, host='0.0.0.0')
+    app.run(debug=True, port=5001, host='0.0.0.0')
