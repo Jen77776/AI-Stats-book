@@ -30,8 +30,10 @@
             <div class="loader" id="summary-loader"></div>
             <div id="summary-content" class="summary-box" style="display: none;"></div>
         </div>
-
-        <h2>All Student Responses</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>All Student Responses</h2>
+            <button id="clear-db-btn" style="background-color: #ef4444;">Clear All Data</button>
+        </div>
         <div style="overflow-x:auto;">
             <table id="feedback-table">
                 <thead>
@@ -50,16 +52,19 @@
             </table>
         </div>
     </div>
-
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // --- 1. 获取所有需要的DOM元素 ---
             const feedbackTableBody = document.querySelector('#feedback-table tbody');
             const generateSummaryBtn = document.getElementById('generate-summary-btn');
             const summaryLoader = document.getElementById('summary-loader');
             const summaryContent = document.getElementById('summary-content');
+            const clearDbBtn = document.getElementById('clear-db-btn'); // 获取清空按钮
 
-            // --- Function to fetch and display all feedback data ---
+            // --- 2. 定义所有函数 ---
             function fetchAndDisplayFeedback() {
+                // 这个函数保持不变
                 fetch('/api/get-all-feedback')
                     .then(response => response.json())
                     .then(data => {
@@ -81,8 +86,8 @@
                     .catch(error => console.error('Error fetching feedback data:', error));
             }
 
-            // --- Function to fetch and display the AI summary ---
             function fetchAndDisplaySummary() {
+                // 这个函数保持不变
                 summaryLoader.style.display = 'block';
                 summaryContent.style.display = 'none';
                 generateSummaryBtn.disabled = true;
@@ -93,7 +98,6 @@
                         summaryLoader.style.display = 'none';
                         generateSummaryBtn.disabled = false;
                         if (data.summary) {
-                            // Simple markdown-to-HTML conversion for display
                             let formattedSummary = data.summary
                                 .replace(/### (.*)/g, '<h3>$1</h3>')
                                 .replace(/## (.*)/g, '<h2>$1</h2>')
@@ -114,10 +118,35 @@
                     });
             }
 
-            // --- Attach event listeners ---
+            // --- 3. 绑定所有事件监听器 ---
             generateSummaryBtn.addEventListener('click', fetchAndDisplaySummary);
+            
+            // CORRECTED: "Clear"按钮的监听器现在在正确的位置
+            clearDbBtn.addEventListener('click', function() {
+                const isConfirmed = window.confirm("Are you sure you want to permanently delete ALL student responses? This action cannot be undone.");
 
-            // --- Initial data load ---
+                if (isConfirmed) {
+                    fetch('/api/clear-all-feedback', {
+                        method: 'POST',
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.status === 'success') {
+                            alert('All feedback data has been cleared.');
+                            fetchAndDisplayFeedback(); // 重新加载表格数据
+                            summaryContent.style.display = 'none'; // 隐藏旧的摘要
+                        } else {
+                            alert('An error occurred: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error clearing database:', error);
+                        alert('A connection error occurred.');
+                    });
+                }
+            });
+
+            // --- 4. 页面初次加载时执行 ---
             fetchAndDisplayFeedback();
         });
     </script>

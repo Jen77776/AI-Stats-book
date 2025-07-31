@@ -249,6 +249,37 @@ def get_summary():
         print(f"Summary generation error: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/clear-all-feedback', methods=['POST'])
+def clear_all_feedback():
+    """
+    Deletes all records from the 'responses' table and clears the Google Sheet.
+    """
+    try:
+        # --- 1. Clear the PostgreSQL Database Table ---
+        # This deletes all rows from the 'responses' table but keeps the table itself.
+        db.session.query(Response).delete()
+        db.session.commit()
+        print("Successfully cleared all rows from the 'responses' table.")
+
+        # --- 2. Clear the Google Sheet ---
+        scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/drive']
+        creds = ServiceAccountCredentials.from_json_keyfile_name("google_credentials.json", scope)
+        client = gspread.authorize(creds)
+        sheet = client.open("AI Biostats Feedback").sheet1
+        
+        # Deletes all rows except for the first one (the header)
+        sheet.clear() 
+        # Optional: Re-add the header row after clearing
+        header = ["id", "timestamp", "student_id", "question", "student_answer", "ai_feedback", "rating", "feedback_comment"]
+        sheet.append_row(header)
+        print("Successfully cleared the Google Sheet.")
+        
+        return jsonify({'status': 'success', 'message': 'All feedback data has been cleared.'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error clearing data: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
 if __name__ == '__main__':
