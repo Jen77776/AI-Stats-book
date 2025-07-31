@@ -17,7 +17,8 @@ format:
   html:
     theme:
       - cosmo
-      - brand
 
 resources:
   - figure5.png
+  - widget.html
+  - widget-script.js
