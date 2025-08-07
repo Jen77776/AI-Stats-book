@@ -45,58 +45,78 @@ except Exception as e:
     model = None
 
 
-def get_dataviz_feedback(student_answer):
+# def get_dataviz_feedback(student_answer):
+#     if not model:
+#         return "AI model failed to load."
+    
+#     # Prompt
+#     system_prompt = """
+#     You are an evaluative AI giving concise, helpful, and honest feedback on a student's written answer to a data visualization critique prompt.
+
+#     The question is:
+#     "I stole this figure from a company selling a data viz class. Examine their plot and find at least three bad data viz practices. Then say which one you think is the worst and why."
+
+#     The figure being critiqued includes multiple design problems. The worst offense is the irregular y-axis scaling: it uses evenly spaced visual intervals with values like 10M, 50M, 200M, 250M, and 275M, which is misleading and nonsensical.
+
+#     Other issues include:
+#     - Y-axis likely doesn’t start at zero
+#     - Last bar (Q1P, likely a projection) isn’t visually distinguished from observed values
+#     - Arbitrary curve overlays the bars with no rationale
+#     - Bars are shaded with a distracting color gradient
+#     - Axis labels are small and hard to read
+#     - X and Y axes have no title
+#     - Font and spacing choices make interpretation harder
+
+#     ---
+#     ### Your Role:
+#     - Evaluate how well the student identifies problems in the plot
+#     - Give a one-off piece of feedback (not a chat), written in a warm and encouraging tone
+#     - Be concise, direct, and helpful — no generic praise
+#     - Your goal is not to assign a grade but to help students reflect and improve
+#     - You should use an internal rubric with levels like:
+#       * Great answer
+#       * Good answer
+#       * Thinking start
+#       * Too superficial
+#       * Misunderstood / incorrect
+#     ---
+#     ### Response Guidelines:
+#     - If the student gave a great answer, affirm their reasoning and note what they did well.
+#     - If the student missed key issues (especially the irregular y-axis), point that out clearly, explain why it matters, and optionally give stronger examples they could have raised.
+#     - If their answer was vague or off-base, help them understand why and give a couple of clear, grounded examples they could have used.
+#     - Do not say “this is a great answer but…” if the answer wasn’t great.
+#     - Focus on useful and honest feedback, not on grading tone.
+#     """
+
+#     prompt = f"{system_prompt}\n\nThe student's answer is:\n\"{student_answer}\""
+    
+#     try:
+#         response = model.generate_content(prompt)
+#         return response.text
+#     except Exception as e:
+#         print(f"Error calling Gemini API for dataviz: {e}")
+#         return "Sorry, an error occurred while getting feedback from the AI."
+
+def get_generic_feedback(prompt_id, student_answer):
     if not model:
         return "AI model failed to load."
     
-    # Prompt
-    system_prompt = """
-    You are an evaluative AI giving concise, helpful, and honest feedback on a student's written answer to a data visualization critique prompt.
-
-    The question is:
-    "I stole this figure from a company selling a data viz class. Examine their plot and find at least three bad data viz practices. Then say which one you think is the worst and why."
-
-    The figure being critiqued includes multiple design problems. The worst offense is the irregular y-axis scaling: it uses evenly spaced visual intervals with values like 10M, 50M, 200M, 250M, and 275M, which is misleading and nonsensical.
-
-    Other issues include:
-    - Y-axis likely doesn’t start at zero
-    - Last bar (Q1P, likely a projection) isn’t visually distinguished from observed values
-    - Arbitrary curve overlays the bars with no rationale
-    - Bars are shaded with a distracting color gradient
-    - Axis labels are small and hard to read
-    - X and Y axes have no title
-    - Font and spacing choices make interpretation harder
-
-    ---
-    ### Your Role:
-    - Evaluate how well the student identifies problems in the plot
-    - Give a one-off piece of feedback (not a chat), written in a warm and encouraging tone
-    - Be concise, direct, and helpful — no generic praise
-    - Your goal is not to assign a grade but to help students reflect and improve
-    - You should use an internal rubric with levels like:
-      * Great answer
-      * Good answer
-      * Thinking start
-      * Too superficial
-      * Misunderstood / incorrect
-    ---
-    ### Response Guidelines:
-    - If the student gave a great answer, affirm their reasoning and note what they did well.
-    - If the student missed key issues (especially the irregular y-axis), point that out clearly, explain why it matters, and optionally give stronger examples they could have raised.
-    - If their answer was vague or off-base, help them understand why and give a couple of clear, grounded examples they could have used.
-    - Do not say “this is a great answer but…” if the answer wasn’t great.
-    - Focus on useful and honest feedback, not on grading tone.
-    """
-
-    prompt = f"{system_prompt}\n\nThe student's answer is:\n\"{student_answer}\""
-    
     try:
-        response = model.generate_content(prompt)
+        # 根据prompt_id，从prompts文件夹读取对应的指令文件
+        prompt_path = os.path.join('prompts', f'{prompt_id}.txt')
+        with open(prompt_path, 'r', encoding='utf-8') as f:
+            system_prompt = f.read()
+        
+        # 构建最终的Prompt并调用API
+        full_prompt = f"{system_prompt}\n\nThe student's answer is:\n\"{student_answer}\""
+        response = model.generate_content(full_prompt)
         return response.text
+    except FileNotFoundError:
+        print(f"Error: Prompt file not found at {prompt_path}")
+        return "Error: The requested prompt (question) could not be found."
     except Exception as e:
-        print(f"Error calling Gemini API for dataviz: {e}")
+        print(f"Error calling Gemini API: {e}")
         return "Sorry, an error occurred while getting feedback from the AI."
-
 
 
 def append_to_google_sheet(row_data):
@@ -139,43 +159,67 @@ def update_gsheet_row(response_id, full_row_data):
     except Exception as e:
         print(f"Google Sheet update error: {e}")
 
-@app.route('/api/evaluate-dataviz', methods=['POST'])
-def handle_dataviz_evaluation():
+# @app.route('/api/evaluate-dataviz', methods=['POST'])
+# def handle_dataviz_evaluation():
+#     data = request.get_json()
+#     student_answer = data.get('answer')
+#     student_id = data.get('student_id', 'anonymous')
+#     ai_feedback = get_dataviz_feedback(student_answer)
+
+#     try:
+#         new_response = Response(
+#             student_id=student_id,
+#             question="Critique of misleading data visualization (Figure 5)",
+#             student_answer=student_answer,
+#             ai_feedback=ai_feedback,
+#             timestamp=datetime.now()
+#         )
+#         db.session.add(new_response)
+#         db.session.commit()
+
+#         # 只有在数据库写入成功后，才继续写入Google Sheet
+#         row_to_insert = [new_response.id, str(new_response.timestamp), student_id, new_response.question, student_answer, ai_feedback, "", ""]
+#         append_to_google_sheet(row_to_insert)
+
+#         return jsonify({'feedback': ai_feedback, 'response_id': new_response.id})
+
+#     except Exception as e:
+#         # 如果数据库操作失败，回滚所有改动
+#         db.session.rollback()
+#         # 在终端打印出详细的错误信息
+#         print(f"--- DATABASE WRITE FAILED ---: {e}")
+#         # 仍然返回一个看起来“成功”的响应给前端，但附带错误信息
+#         return jsonify({
+#             'feedback': ai_feedback, 
+#             'response_id': None,
+#             'error': 'Database write operation failed.'
+#         }), 500
+@app.route('/api/evaluate', methods=['POST'])
+def handle_evaluation():
     data = request.get_json()
     student_answer = data.get('answer')
     student_id = data.get('student_id', 'anonymous')
-    ai_feedback = get_dataviz_feedback(student_answer)
+    prompt_id = data.get('prompt_id') # 前端需要传来这个ID
 
-    # --- 这是关键的修改 ---
-    # 我们将数据库操作包裹在try...except中
-    try:
-        new_response = Response(
-            student_id=student_id,
-            question="Critique of misleading data visualization (Figure 5)",
-            student_answer=student_answer,
-            ai_feedback=ai_feedback,
-            timestamp=datetime.now()
-        )
-        db.session.add(new_response)
-        db.session.commit()
+    if not prompt_id:
+        return jsonify({'error': 'A prompt_id must be provided.'}), 400
 
-        # 只有在数据库写入成功后，才继续写入Google Sheet
-        row_to_insert = [new_response.id, str(new_response.timestamp), student_id, new_response.question, student_answer, ai_feedback, "", ""]
-        append_to_google_sheet(row_to_insert)
+    ai_feedback = get_generic_feedback(prompt_id, student_answer)
+    
+    new_response = Response(
+        student_id=student_id,
+        question=prompt_id, # 用prompt_id作为问题的标识
+        student_answer=student_answer,
+        ai_feedback=ai_feedback,
+        timestamp=datetime.now()
+    )
+    db.session.add(new_response)
+    db.session.commit()
 
-        return jsonify({'feedback': ai_feedback, 'response_id': new_response.id})
+    row_to_insert = [new_response.id, str(new_response.timestamp), student_id, new_response.question, student_answer, ai_feedback, "", ""]
+    append_to_google_sheet(row_to_insert)
 
-    except Exception as e:
-        # 如果数据库操作失败，回滚所有改动
-        db.session.rollback()
-        # 在终端打印出详细的错误信息
-        print(f"--- DATABASE WRITE FAILED ---: {e}")
-        # 仍然返回一个看起来“成功”的响应给前端，但附带错误信息
-        return jsonify({
-            'feedback': ai_feedback, 
-            'response_id': None,
-            'error': 'Database write operation failed.'
-        }), 500
+    return jsonify({'feedback': ai_feedback, 'response_id': new_response.id})
 # --- Add the new endpoint for receiving ratings ---
 @app.route('/api/rate-feedback', methods=['POST'])
 def rate_feedback():
