@@ -9,6 +9,7 @@ const feedbackResult = widget.querySelector('#feedback-result');
 const ratingContainer = widget.querySelector('#rating-container');
 const ratingForm = widget.querySelector('#rating-form');
 const ratingThanks = widget.querySelector('#rating-thanks');
+const promptId = widget.dataset.promptId;
 
 let currentResponseId = null; 
 
@@ -25,16 +26,17 @@ answerForm.addEventListener('submit', function(event) {
     ratingThanks.style.display = 'none';
 
     // 用于本地测试:
-    //const apiUrl = 'http://127.0.0.1:5001/api/evaluate-dataviz';
+    //const apiUrl = 'http://127.0.0.1:5001/api/evaluate';
     // 用于线上部署:
-     const apiUrl = 'https://ai-stats-book.onrender.com/api/evaluate-dataviz';
+     const apiUrl = 'https://ai-stats-book.onrender.com/api/evaluate';
 
     fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             answer: studentAnswer,
-            student_id: studentId
+            student_id: studentId,
+            prompt_id: promptId // <-- 将prompt_id发送给后端
         }),
     })
     .then(response => {
@@ -77,7 +79,7 @@ ratingForm.addEventListener('submit', function(event) {
     // 用于本地测试:
     //const ratingApiUrl = 'http://127.0.0.1:5001/api/rate-feedback';
     // 用于线上部署:
-    const ratingApiUrl = 'https://ai-stats-book.onrender.com/api/rate-feedback';
+   const ratingApiUrl = 'https://ai-stats-book.onrender.com/api/rate-feedback';
 
     fetch(ratingApiUrl, {
         method: 'POST',
