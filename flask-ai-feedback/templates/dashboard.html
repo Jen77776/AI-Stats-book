@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feedback Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: system-ui, sans-serif; line-height: 1.6; background-color: #f4f4f9; color: #333; margin: 0; padding: 2em; }
+        body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; background-color: #f4f4f9; color: #333; margin: 0; padding: 2em; }
         .container { max-width: 1200px; margin: auto; background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h1, h2 { color: #1a1a1a; }
         table { width: 100%; border-collapse: collapse; margin-top: 1em; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: top; }
         th { background-color: #f8f8f8; font-weight: 600; }
         tr:nth-child(even) { background-color: #f9fafb; }
         .summary-box { background-color: #eef2ff; border-left: 5px solid #4f46e5; padding: 1.5em; margin-bottom: 2em; border-radius: 4px; }
@@ -17,6 +18,7 @@
         button:hover { background-color: #4338ca; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #4f46e5; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .ai-flag { background-color: #fef2f2; color: #991b1b; font-size: 0.8em; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -26,10 +28,17 @@
 
         <div class="summary-section">
             <h2>AI-Generated Summary</h2>
+            <p>This summary is generated only from answers NOT flagged as AI-written.</p>
             <button id="generate-summary-btn">Generate Class Summary</button>
             <div class="loader" id="summary-loader"></div>
             <div id="summary-content" class="summary-box" style="display: none;"></div>
         </div>
+        
+        <h2>Feedback Ratings Overview</h2>
+        <div style="max-width: 600px; margin-bottom: 2em;">
+            <canvas id="ratingHistogram"></canvas>
+        </div>
+
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2>All Student Responses</h2>
             <button id="clear-db-btn" style="background-color: #ef4444;">Clear All Data</button>
@@ -55,76 +64,120 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // --- 1. 获取所有需要的DOM元素 ---
+            // --- 3. 在JavaScript中添加绘图逻辑 ---
+
             const feedbackTableBody = document.querySelector('#feedback-table tbody');
             const generateSummaryBtn = document.getElementById('generate-summary-btn');
             const summaryLoader = document.getElementById('summary-loader');
             const summaryContent = document.getElementById('summary-content');
-            const clearDbBtn = document.getElementById('clear-db-btn'); // 获取清空按钮
+            const clearDbBtn = document.getElementById('clear-db-btn');
+            
+            async function fetchAndDisplayFeedback() {
+                try {
+                    const response = await fetch('/api/get-all-feedback');
+                    const data = await response.json();
 
-            // --- 2. 定义所有函数 ---
-            function fetchAndDisplayFeedback() {
-                // 这个函数保持不变
-                fetch('/api/get-all-feedback')
-                    .then(response => response.json())
-                    .then(data => {
-                        feedbackTableBody.innerHTML = ''; // Clear existing rows
-                        data.forEach(row => {
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = `
-                                <td>${row.id}</td>
-                                <td>${new Date(row.timestamp).toLocaleString()}</td>
-                                <td>${row.student_id || ''}</td>
-                                <td>${row.student_answer}</td>
-                                <td>${row.ai_feedback}</td>
-                                <td>${row.rating || ''}</td>
-                                <td>${row.feedback_comment || ''}</td>
-                            `;
-                            feedbackTableBody.appendChild(tr);
-                        });
-                    })
-                    .catch(error => console.error('Error fetching feedback data:', error));
+                    feedbackTableBody.innerHTML = '';
+                    data.forEach(row => {
+                        const tr = document.createElement('tr');
+                        let answerCellContent = row.student_answer;
+                        if (row.is_ai_generated) {
+                            answerCellContent += `<br><span class="ai-flag">Flagged as AI-Generated</span>`;
+                        }
+                        tr.innerHTML = `
+                            <td>${row.id}</td>
+                            <td>${new Date(row.timestamp).toLocaleString()}</td>
+                            <td>${row.student_id || ''}</td>
+                            <td>${answerCellContent}</td>
+                            <td>${row.ai_feedback}</td>
+                            <td>${row.rating || ''}</td>
+                            <td>${row.feedback_comment || ''}</td>
+                        `;
+                        feedbackTableBody.appendChild(tr);
+                    });
+
+                    // 数据加载后，调用新函数来渲染直方图
+                    renderRatingHistogram(data);
+
+                } catch (error) {
+                    console.error('Error fetching feedback data:', error);
+                }
             }
-
-            function fetchAndDisplaySummary() {
-                // 这个函数保持不变
-                summaryLoader.style.display = 'block';
+            
+            async function fetchAndDisplaySummary() {
+                 summaryLoader.style.display = 'block';
                 summaryContent.style.display = 'none';
                 generateSummaryBtn.disabled = true;
 
-                fetch('/api/get-summary')
-                    .then(response => response.json())
-                    .then(data => {
-                        summaryLoader.style.display = 'none';
-                        generateSummaryBtn.disabled = false;
-                        if (data.summary) {
-                            let formattedSummary = data.summary
-                                .replace(/### (.*)/g, '<h3>$1</h3>')
-                                .replace(/## (.*)/g, '<h2>$1</h2>')
-                                .replace(/# (.*)/g, '<h1>$1</h1>')
-                                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-                                .replace(/\* ([^*]+)/g, '<li>$1</li>');
-                            summaryContent.innerHTML = formattedSummary;
-                            summaryContent.style.display = 'block';
-                        } else {
-                            summaryContent.innerText = data.error || 'An unknown error occurred.';
-                            summaryContent.style.display = 'block';
+                // 确保在生成摘要前，表格数据也是最新的
+                await fetchAndDisplayFeedback();
+
+                try {
+                    const response = await fetch('/api/get-summary');
+                    const data = await response.json();
+                    
+                    if (data.summary) {
+                        let formattedSummary = data.summary
+                            .replace(/### (.*)/g, '<h3>$1</h3>')
+                            .replace(/## (.*)/g, '<h2>$1</h2>')
+                            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\* ([^*]+)/g, '<li>$1</li>');
+                        summaryContent.innerHTML = formattedSummary;
+                        summaryContent.style.display = 'block';
+                    } else {
+                        summaryContent.innerText = data.error || 'An unknown error occurred.';
+                        summaryContent.style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('Error fetching summary:', error);
+                } finally {
+                    summaryLoader.style.display = 'none';
+                    generateSummaryBtn.disabled = false;
+                }
+            }
+            
+            // 新增的函数，专门用于渲染直方图
+            function renderRatingHistogram(data) {
+                const ratingCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+                data.forEach(row => {
+                    if (row.rating >= 1 && row.rating <= 5) {
+                        ratingCounts[row.rating]++;
+                    }
+                });
+
+                const chartData = {
+                    labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
+                    datasets: [{
+                        label: '# of Student Ratings',
+                        data: Object.values(ratingCounts),
+                        backgroundColor: 'rgba(79, 70, 229, 0.6)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        borderWidth: 1
+                    }]
+                };
+
+                const ctx = document.getElementById('ratingHistogram').getContext('2d');
+                
+                if (window.myRatingChart) {
+                    window.myRatingChart.destroy();
+                }
+
+                window.myRatingChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: chartData,
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1 } }
                         }
-                    })
-                    .catch(error => {
-                        summaryLoader.style.display = 'none';
-                        generateSummaryBtn.disabled = false;
-                        console.error('Error fetching summary:', error)
-                    });
+                    }
+                });
             }
 
-            // --- 3. 绑定所有事件监听器 ---
+            // --- 绑定事件监听器 ---
             generateSummaryBtn.addEventListener('click', fetchAndDisplaySummary);
             
-            // CORRECTED: "Clear"按钮的监听器现在在正确的位置
             clearDbBtn.addEventListener('click', function() {
                 const isConfirmed = window.confirm("Are you sure you want to permanently delete ALL student responses? This action cannot be undone.");
-
                 if (isConfirmed) {
                     fetch('/api/clear-all-feedback', {
                         method: 'POST',
@@ -133,8 +186,8 @@
                     .then(data => {
                         if(data.status === 'success') {
                             alert('All feedback data has been cleared.');
-                            fetchAndDisplayFeedback(); // 重新加载表格数据
-                            summaryContent.style.display = 'none'; // 隐藏旧的摘要
+                            fetchAndDisplayFeedback();
+                            summaryContent.style.display = 'none';
                         } else {
                             alert('An error occurred: ' + data.message);
                         }
@@ -146,7 +199,7 @@
                 }
             });
 
-            // --- 4. 页面初次加载时执行 ---
+            // --- 页面初次加载时执行 ---
             fetchAndDisplayFeedback();
         });
     </script>
