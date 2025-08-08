@@ -19,6 +19,10 @@
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #4f46e5; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .ai-flag { background-color: #fef2f2; color: #991b1b; font-size: 0.8em; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 5px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5em; margin-bottom: 2em; }
+        .stat-card { background-color: #f9fafb; border: 1px solid #e5e7eb; padding: 1.5em; border-radius: 8px; text-align: center; }
+        .stat-card-title { font-size: 1em; color: #4b5563; margin: 0 0 0.5em 0; }
+        .stat-card-value { font-size: 2.5em; font-weight: 600; color: #1a1a1a; margin: 0; }
     </style>
 </head>
 <body>
@@ -32,6 +36,17 @@
             <button id="generate-summary-btn">Generate Class Summary</button>
             <div class="loader" id="summary-loader"></div>
             <div id="summary-content" class="summary-box" style="display: none;"></div>
+        </div>
+                <h2>Quick Stats</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <p class="stat-card-title">Total Submissions</p>
+                <h3 id="total-submissions" class="stat-card-value">0</h3>
+            </div>
+            <div class="stat-card">
+                <p class="stat-card-title">Likely AI-Generated</p>
+                <h3 id="ai-generated-count" class="stat-card-value">0</h3>
+            </div>
         </div>
         
         <h2>Feedback Ratings Overview</h2>
@@ -67,6 +82,8 @@
             // --- 3. 在JavaScript中添加绘图逻辑 ---
 
             const feedbackTableBody = document.querySelector('#feedback-table tbody');
+            const totalSubmissionsEl = document.getElementById('total-submissions'); // 获取新元素
+            const aiGeneratedCountEl = document.getElementById('ai-generated-count'); // 获取新元素
             const generateSummaryBtn = document.getElementById('generate-summary-btn');
             const summaryLoader = document.getElementById('summary-loader');
             const summaryContent = document.getElementById('summary-content');
@@ -76,7 +93,14 @@
                 try {
                     const response = await fetch('/api/get-all-feedback');
                     const data = await response.json();
-
+                    let aiCount = 0;
+                    data.forEach(row => {
+                        if (row.is_ai_generated) {
+                            aiCount++;
+                        }
+                    });
+                    totalSubmissionsEl.innerText = data.length;
+                    aiGeneratedCountEl.innerText = aiCount;
                     feedbackTableBody.innerHTML = '';
                     data.forEach(row => {
                         const tr = document.createElement('tr');
