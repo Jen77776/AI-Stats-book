@@ -46,7 +46,7 @@
             <div class="loader" id="summary-loader"></div>
             <div id="summary-content" class="summary-box" style="display: none;"></div>
         </div>
-                <h2>Quick Stats</h2>
+        <h2>Quick Stats</h2>
         <div class="stats-grid">
             <div class="stat-card">
                 <p class="stat-card-title">Total Submissions</p>
@@ -56,6 +56,10 @@
                 <p class="stat-card-title">Likely AI-Generated</p>
                 <h3 id="ai-generated-count" class="stat-card-value">0</h3>
             </div>
+        </div>
+        <h2>Performance Grades Overview</h2>
+        <div style="max-width: 600px; margin-bottom: 2em;">
+            <canvas id="performanceChart"></canvas>
         </div>
         
         <h2>Feedback Ratings Overview</h2>
@@ -131,6 +135,7 @@
 
                     // 数据加载后，调用新函数来渲染直方图
                     renderRatingHistogram(data);
+                    renderPerformanceChart(data);
 
                 } catch (error) {
                     console.error('Error fetching feedback data:', error);
@@ -205,6 +210,57 @@
                     }
                 });
             }
+            function renderPerformanceChart(data) {
+    const gradeCounts = {};
+    
+    // 1. 统计每个评级的数量
+    data.forEach(row => {
+        if (row.performance_grade) {
+            gradeCounts[row.performance_grade] = (gradeCounts[row.performance_grade] || 0) + 1;
+        }
+    });
+
+    const chartData = {
+        labels: Object.keys(gradeCounts),
+        datasets: [{
+            label: '# of Submissions',
+            data: Object.values(gradeCounts),
+            backgroundColor: [ // 为不同评级设置不同颜色
+                'rgba(22, 163, 74, 0.6)',
+                'rgba(34, 197, 94, 0.6)',
+                'rgba(250, 204, 21, 0.6)',
+                'rgba(249, 115, 22, 0.6)',
+                'rgba(239, 68, 68, 0.6)'
+            ],
+            borderColor: 'rgba(255, 255, 255, 1)',
+            borderWidth: 1
+        }]
+    };
+
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    
+    if(window.myPerformanceChart) {
+        window.myPerformanceChart.destroy();
+    }
+
+    // 2. 创建并渲染一个新的饼图 (Pie Chart)
+    window.myPerformanceChart = new Chart(ctx, {
+        type: 'pie',
+        data: chartData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Student Performance Grades Distribution'
+                }
+            }
+        }
+    });
+}
 
             // --- 绑定事件监听器 ---
             generateSummaryBtn.addEventListener('click', fetchAndDisplaySummary);

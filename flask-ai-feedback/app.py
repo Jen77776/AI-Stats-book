@@ -31,6 +31,7 @@ class Response(db.Model):
     rating = db.Column(db.Integer)
     feedback_comment = db.Column(db.Text)
     is_ai_generated = db.Column(db.Boolean, default=False, nullable=False) 
+    performance_grade = db.Column(db.String(50))
 
 with app.app_context():
     db.create_all()
@@ -150,36 +151,70 @@ def is_answer_ai_generated(student_answer):
         print(f"AI detection error or invalid JSON response: {e}")
         print(f"Original AI response text: {response.text}")
         return False # 如果检测失败，默认不是AI生成的
+def get_feedback_and_grade(prompt_id, student_answer):
+    """
+    Gets both feedback and a performance grade from the AI using a structured JSON response.
+    """
+    if not model:
+        return "AI model failed to load.", "N/A"
 
+    try:
+        prompt_path = os.path.join('prompts', f'{prompt_id}.txt')
+        with open(prompt_path, 'r', encoding='utf-8') as f:
+            system_prompt = f.read()
+
+        # 新的、要求返回JSON的Prompt
+        full_prompt = f"""
+        {system_prompt}
+
+        ---
+        TASK:
+        Based on the rubric and guidelines above, analyze the following student's answer.
+        You MUST respond with only a valid JSON object containing two keys:
+        1.  "grade": A string classifying the student's performance based on the rubric (e.g., "Great answer", "Good answer", "Thinking start", "Too superficial", "Misunderstood / incorrect").
+        2.  "feedback": A string containing the helpful, warm, and encouraging feedback for the student.
+
+        Student's answer: "{student_answer}"
+        """
+
+        response = model.generate_content(full_prompt)
+        result_json = json.loads(response.text)
+
+        grade = result_json.get("grade", "N/A")
+        feedback = result_json.get("feedback", "Could not generate feedback.")
+
+        return feedback, grade
+
+    except Exception as e:
+        print(f"Error getting feedback and grade: {e}")
+        return "Sorry, an error occurred while getting feedback.", "Error"
 @app.route('/api/evaluate', methods=['POST'])
 def handle_evaluation():
     data = request.get_json()
     student_answer = data.get('answer')
     student_id = data.get('student_id', 'anonymous')
-    prompt_id = data.get('prompt_id') # 前端需要传来这个ID
+    prompt_id = data.get('prompt_id')
 
     if not prompt_id:
         return jsonify({'error': 'A prompt_id must be provided.'}), 400
     
     is_ai = is_answer_ai_generated(student_answer)
     print(f"AI detection result for new answer: {is_ai}")
-
-    ai_feedback = get_generic_feedback(prompt_id, student_answer)
     
+    # 调用新的评分函数，它会同时返回feedback和grade
+    ai_feedback, performance_grade = get_feedback_and_grade(prompt_id, student_answer)
+
     new_response = Response(
         student_id=student_id,
-        question=prompt_id, # 用prompt_id作为问题的标识
+        question=prompt_id,
         student_answer=student_answer,
         ai_feedback=ai_feedback,
         timestamp=datetime.now(),
-        is_ai_generated=is_ai
+        is_ai_generated=is_ai,
+        performance_grade=performance_grade # <-- 将获取到的评级存入数据库
     )
     db.session.add(new_response)
     db.session.commit()
-
-    row_to_insert = [new_response.id, str(new_response.timestamp), student_id, new_response.question, student_answer, ai_feedback, "", ""]
-    append_to_google_sheet(row_to_insert)
-
     return jsonify({'feedback': ai_feedback, 'response_id': new_response.id})
 # --- Add the new endpoint for receiving ratings ---
 @app.route('/api/rate-feedback', methods=['POST'])
@@ -216,11 +251,16 @@ def get_all_feedback():
     output = []
     for r in responses:
         output.append({
-            'id': r.id, 'student_id': r.student_id, 'question': r.question,
-            'student_answer': r.student_answer, 'ai_feedback': r.ai_feedback,
-            'timestamp': r.timestamp.isoformat(), 'rating': r.rating,
+            'id': r.id,
+            'student_id': r.student_id,
+            'question': r.question,
+            'student_answer': r.student_answer,
+            'ai_feedback': r.ai_feedback,
+            'timestamp': r.timestamp.isoformat(),
+            'rating': r.rating,
             'feedback_comment': r.feedback_comment,
-            'is_ai_generated': r.is_ai_generated
+            'is_ai_generated': r.is_ai_generated,
+            'performance_grade': r.performance_grade # <-- 新增这一行
         })
     return jsonify(output)
 
