@@ -18,7 +18,16 @@
         button:hover { background-color: #4338ca; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #4f46e5; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .ai-flag { background-color: #fef2f2; color: #991b1b; font-size: 0.8em; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 5px; }
+                .ai-flag {
+            background-color: #fef2f2;
+            color: #991b1b;
+            font-size: 0.8em;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 5px;
+            font-weight: 500;
+        }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5em; margin-bottom: 2em; }
         .stat-card { background-color: #f9fafb; border: 1px solid #e5e7eb; padding: 1.5em; border-radius: 8px; text-align: center; }
         .stat-card-title { font-size: 1em; color: #4b5563; margin: 0 0 0.5em 0; }
@@ -108,7 +117,7 @@
                         if (row.is_ai_generated) {
                             answerCellContent += `<br><span class="ai-flag">Flagged as AI-Generated</span>`;
                         }
-                        tr.innerHTML = `
+                       tr.innerHTML = `
                             <td>${row.id}</td>
                             <td>${new Date(row.timestamp).toLocaleString()}</td>
                             <td>${row.student_id || ''}</td>
