@@ -1,0 +1,13 @@
+{
+  "dataviz_critique": {
+    "title": "Data Visualization Challenge",
+    "question_text": "Examine their plot and find at least three bad data viz practices. Then say which one you think is the worst and why.",
+    "image_src": "figure5.png"
+  },
+    "chapter5_q8": {
+    "title": "Chapter 5, Question 8: Summarizing Center",
+    "question_text": "Examine this plot showing gene expression levels in different tissues. Identify at least three weaknesses in its design. Then say which one you think is the most serious and why.",
+    "image_src": "gene_expression_plot.png"
+  }
+
+}

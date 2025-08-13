@@ -20,5 +20,6 @@ format:
 
 resources:
   - figure5.png
+  - gene_expression_plot.png
   - widget.html
   - widget-script.js

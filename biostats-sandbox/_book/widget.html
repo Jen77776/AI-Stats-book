@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Visualization Challenge</title>
+    <title>AI Tutor</title>
     <style>
-        /* --- 所有的CSS样式都留在这里 --- */
-        .dv-challenge-widget { font-family: system-ui, sans-serif; max-width: 700px; margin: 2em auto; border: 1px solid #e0e0e0; border-radius: 12px; padding: 2.5em; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #fff; line-height: 1.6; color: #333; }
+        body { margin: 0; padding: 0; }
+        .dv-challenge-widget { font-family: system-ui, -apple-system, sans-serif; max-width: 700px; margin: 1em auto; border: 1px solid #e0e0e0; border-radius: 12px; padding: 2.5em; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background-color: #fff; line-height: 1.6; color: #333; }
         .dv-challenge-widget h1 { font-size: 1.75em; font-weight: 600; margin-top: 0; margin-bottom: 1em; color: #1a1a1a; }
         .dv-challenge-widget h4 { font-size: 1.1em; font-weight: 600; color: #2c2c2c; margin-top: 0; margin-bottom: 0.5em; }
         #question-container { background-color: #f9fafb; padding: 1.5em; border-radius: 8px; margin-bottom: 1.5em; border: 1px solid #e5e7eb; }
@@ -15,7 +15,6 @@
         #feedback-container { border: 1px solid #d1fae5; padding: 1.5em; margin-top: 1.5em; background-color: #f0fdf4; border-radius: 8px; display: none; }
         #feedback-result { white-space: pre-wrap; font-size: 1em; color: #374151; }
         #student-answer { width: 100%; box-sizing: border-box; height: 150px; margin-bottom: 1em; font-size: 1em; padding: 12px; border-radius: 6px; border: 1px solid #d1d5db; resize: vertical; transition: border-color 0.2s, box-shadow 0.2s; }
-        #student-answer:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(59,130,246,0.25); }
         button { background-color: #2563eb; color: white; padding: 12px 20px; border: none; border-radius: 6px; font-size: 1em; font-weight: 500; cursor: pointer; transition: background-color 0.2s; }
         button:hover { background-color: #1d4ed8; }
         .loader { border: 5px solid #e5e7eb; border-top: 5px solid #2563eb; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; display: none; margin: 20px auto; }
@@ -23,28 +22,32 @@
     </style>
 </head>
 <body>
-    <div class="dv-challenge-widget" data-prompt-id="dataviz_critique">
-        <h1>Data Visualization Challenge</h1>
+    <div class="dv-challenge-widget">
+        <h1 id="widget-title">Loading...</h1>
         <div id="question-container">
             <strong>Question:</strong>
-            <p id="question-text">Examine their plot and find at least three bad data viz practices. Then say which one you think is the worst and why.</p>
-            <img src="figure5.png" id="chart-image" alt="Misleading Data Visualization Chart">
+            <p id="question-text">Loading question content...</p>
+            <img src="" id="chart-image" alt="" style="display: none;">
         </div>
+        
         <form id="answer-form">
-            <div style="margin-bottom: 1em;">
+             <div style="margin-bottom: 1em;">
                 <label for="student-id" style="font-weight: 500; font-size: 0.9em;">Student ID (Optional):</label><br>
                 <input type="text" id="student-id" name="student_id" placeholder="Enter your X.500" style="width: 50%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
             </div>
-            <label for="student-answer" style="font-weight: 500; font-size: 0.9em;">Your Critique:</label><br>
-            <textarea id="student-answer" name="student_answer" placeholder="Enter your critique here..." required></textarea><br>
+            <label for="student-answer" style="font-weight: 500; font-size: 0.9em;">Your Answer:</label><br>
+            <textarea id="student-answer" name="student_answer" placeholder="Enter your answer here..." required></textarea><br>
             <button type="submit">Submit for Feedback</button>
         </form>
+
         <div class="loader" id="loader"></div>
-        <div id="feedback-container">
+
+        <div id="feedback-container" style="display: none;">
             <h4>AI Teaching Assistant Feedback:</h4>
             <div id="feedback-result"></div>
         </div>
-        <div id="rating-container" style="display: none; margin-top: 1.5em; padding-top: 1.5em; border-top: 1px solid #e5e7eb;">
+        
+        <div id="rating-container" style="display: none;">
             <h4>Rate this Feedback (Optional)</h4>
             <form id="rating-form">
                 <div style="margin-bottom: 0.5em;">
@@ -63,7 +66,6 @@
             </form>
             <p id="rating-thanks" style="color: #16a34a; font-weight: 500; display: none;">Thanks for your feedback!</p>
         </div>
-    </div>
-    <script src="widget-script.js"></script>
+    </div> <script src="widget-script.js"></script>
 </body>
 </html>

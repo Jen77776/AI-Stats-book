@@ -1,11 +1,11 @@
-# seed_database.py
+# seed_database.py (Updated Version)
 
 import random
 from faker import Faker
 from app import app, db, Response # 从您的主应用中导入app, db和Response模型
 
 # --- 配置 ---
-NUMBER_OF_FAKE_ENTRIES = 20 # 您要求的20条假数据
+NUMBER_OF_FAKE_ENTRIES = 20 # 您想创建多少条假数据
 FAKE_ANSWERS = [
     "I think the worst part is the y-axis, the intervals are not even and it's very misleading.",
     "The colors are too bright and the green arrow doesn't seem to mean anything. The y-axis is also confusing.",
@@ -22,6 +22,15 @@ FAKE_COMMENTS = [
     "This was a useful exercise.",
     "The AI was a bit too harsh in its critique.",
 ]
+# 新增：模拟AI对学生表现的评级
+FAKE_GRADES = [
+    "Great answer",
+    "Good answer",
+    "Thinking start",
+    "Too superficial",
+    "Misunderstood / incorrect"
+]
+
 
 # --- 主函数 ---
 def seed_data():
@@ -51,7 +60,8 @@ def seed_data():
                 timestamp=fake.date_time_this_year(),
                 rating=random.randint(1, 5),
                 feedback_comment=random.choice(FAKE_COMMENTS),
-                is_ai_generated=is_ai
+                is_ai_generated=is_ai,
+                performance_grade=random.choice(FAKE_GRADES) # <-- 新增：为新列生成模拟数据
             )
             db.session.add(new_response) # 将新对象添加到“待办列表”
 
