@@ -168,24 +168,55 @@
             console.error('Error fetching unique problems:', error);
         }
     }
-            async function fetchAndDisplaySummary() {
-                 summaryLoader.style.display = 'block';
+      async function fetchAndDisplaySummary() {
+                summaryLoader.style.display = 'block';
                 summaryContent.style.display = 'none';
                 generateSummaryBtn.disabled = true;
 
-                // 确保在生成摘要前，表格数据也是最新的
+                const selectedProblemId = document.getElementById('problem-selector').value;
+                const apiUrl = `/api/get-summary?prompt_id=${selectedProblemId}`;
+
                 await fetchAndDisplayFeedback();
 
                 try {
-                    const response = await fetch('/api/get-summary');
+                    const response = await fetch(apiUrl);
                     const data = await response.json();
                     
                     if (data.summary) {
-                        let formattedSummary = data.summary
-                            .replace(/### (.*)/g, '<h3>$1</h3>')
-                            .replace(/## (.*)/g, '<h2>$1</h2>')
-                            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-                            .replace(/\* ([^*]+)/g, '<li>$1</li>');
+                        // 修复的 Markdown 到 HTML 转换逻辑
+                        let formattedSummary = data.summary;
+                        
+                        // 1. 处理标题（从最多#开始，避免重复匹配）
+                        formattedSummary = formattedSummary.replace(/### (.*)/g, '<h3>$1</h3>');
+                        formattedSummary = formattedSummary.replace(/## (.*)/g, '<h2>$1</h2>');
+                        formattedSummary = formattedSummary.replace(/^# (.*)/gm, '<h1>$1</h1>');
+                        
+                        // 2. 处理粗体和斜体
+                        formattedSummary = formattedSummary.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+                        formattedSummary = formattedSummary.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+                        
+                        // 3. 处理列表项 - 修复版本
+                        // 首先将 "* item" 转换为临时标记
+                        formattedSummary = formattedSummary.replace(/^\* (.*)$/gm, '|||LISTITEM|||$1|||ENDLISTITEM|||');
+                        
+                        // 然后找到连续的列表项并用 <ul> 包裹
+                        formattedSummary = formattedSummary.replace(/((\|\|\|LISTITEM\|\|\|.*?\|\|\|ENDLISTITEM\|\|\|\n?)+)/g, function(match) {
+                            // 将每个列表项转换为 <li>
+                            const listItems = match.replace(/\|\|\|LISTITEM\|\|\|(.*?)\|\|\|ENDLISTITEM\|\|\|\n?/g, '<li>$1</li>');
+                            return '<ul>' + listItems + '</ul>';
+                        });
+                        
+                        // 处理段落
+                        formattedSummary = formattedSummary.replace(/\n\n/g, '</p><p>');
+                        formattedSummary = '<p>' + formattedSummary + '</p>';
+                        
+                        // 清理多余的空段落
+                        formattedSummary = formattedSummary.replace(/<p><\/p>/g, '');
+                        formattedSummary = formattedSummary.replace(/<p>(<h[1-6]>)/g, '$1');
+                        formattedSummary = formattedSummary.replace(/(<\/h[1-6]>)<\/p>/g, '$1');
+                        formattedSummary = formattedSummary.replace(/<p>(<ul>)/g, '$1');
+                        formattedSummary = formattedSummary.replace(/(<\/ul>)<\/p>/g, '$1');
+
                         summaryContent.innerHTML = formattedSummary;
                         summaryContent.style.display = 'block';
                     } else {
@@ -194,99 +225,119 @@
                     }
                 } catch (error) {
                     console.error('Error fetching summary:', error);
+                    summaryContent.innerText = 'An error occurred while fetching the summary.';
+                    summaryContent.style.display = 'block';
                 } finally {
                     summaryLoader.style.display = 'none';
                     generateSummaryBtn.disabled = false;
                 }
             }
-            
-            // 新增的函数，专门用于渲染直方图
-            function renderRatingHistogram(data) {
-                const ratingCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-                data.forEach(row => {
-                    if (row.rating >= 1 && row.rating <= 5) {
-                        ratingCounts[row.rating]++;
-                    }
-                });
-
-                const chartData = {
-                    labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
-                    datasets: [{
-                        label: '# of Student Ratings',
-                        data: Object.values(ratingCounts),
-                        backgroundColor: 'rgba(79, 70, 229, 0.6)',
-                        borderColor: 'rgba(79, 70, 229, 1)',
-                        borderWidth: 1
-                    }]
-                };
-
-                const ctx = document.getElementById('ratingHistogram').getContext('2d');
-                
-                if (window.myRatingChart) {
-                    window.myRatingChart.destroy();
-                }
-
-                window.myRatingChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: chartData,
-                    options: {
-                        scales: {
-                            y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                        }
-                    }
-                });
-            }
             function renderPerformanceChart(data) {
-    const gradeCounts = {};
+    const ctx = document.getElementById('performanceChart').getContext('2d');
     
-    // 1. 统计每个评级的数量
-    data.forEach(row => {
-        if (row.performance_grade) {
-            gradeCounts[row.performance_grade] = (gradeCounts[row.performance_grade] || 0) + 1;
-        }
+    // 1. 确保在做任何事之前，先销毁旧图表
+    if(window.myPerformanceChart) {
+        window.myPerformanceChart.destroy();
+    }
+
+    // 2. 检查并筛选有效数据
+    const validGrades = data.filter(row => row.performance_grade);
+    if (validGrades.length === 0) {
+        // 如果没有数据，显示提示并退出
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.font = "16px Arial";
+        ctx.fillStyle = "#888";
+        ctx.textAlign = "center";
+        ctx.fillText("No performance grade data available for this selection.", ctx.canvas.width / 2, 100);
+        return;
+    }
+
+    // 3. 仅统计一次数据
+    const gradeCounts = {};
+    validGrades.forEach(row => {
+        gradeCounts[row.performance_grade] = (gradeCounts[row.performance_grade] || 0) + 1;
     });
 
+    // 4. 仅定义一次图表数据
     const chartData = {
         labels: Object.keys(gradeCounts),
         datasets: [{
             label: '# of Submissions',
             data: Object.values(gradeCounts),
-            backgroundColor: [ // 为不同评级设置不同颜色
-                'rgba(22, 163, 74, 0.6)',
-                'rgba(34, 197, 94, 0.6)',
-                'rgba(250, 204, 21, 0.6)',
-                'rgba(249, 115, 22, 0.6)',
+            backgroundColor: [
+                'rgba(22, 163, 74, 0.6)', 'rgba(34, 197, 94, 0.6)',
+                'rgba(250, 204, 21, 0.6)', 'rgba(249, 115, 22, 0.6)',
                 'rgba(239, 68, 68, 0.6)'
             ],
             borderColor: 'rgba(255, 255, 255, 1)',
             borderWidth: 1
         }]
     };
-
-    const ctx = document.getElementById('performanceChart').getContext('2d');
     
-    if(window.myPerformanceChart) {
-        window.myPerformanceChart.destroy();
-    }
-
-    // 2. 创建并渲染一个新的饼图 (Pie Chart)
+    // 5. 创建新图表
     window.myPerformanceChart = new Chart(ctx, {
         type: 'pie',
         data: chartData,
         options: {
             responsive: true,
             plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: true,
-                    text: 'Student Performance Grades Distribution'
-                }
+                legend: { position: 'top' },
+                title: { display: true, text: 'Student Performance Grades Distribution' }
             }
         }
     });
 }
+            // 新增的函数，专门用于渲染直方图
+function renderRatingHistogram(data) {
+    const ctx = document.getElementById('ratingHistogram').getContext('2d');
+    
+    // 1. 必须先销毁旧图表实例
+    if (window.myRatingChart) {
+        window.myRatingChart.destroy();
+    }
+
+    // 2. 检查是否有有效的评分数据
+    const validRatings = data.filter(row => row.rating >= 1 && row.rating <= 5);
+    if (validRatings.length === 0) {
+        // 如果没有数据，显示提示并退出
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.font = "16px Arial";
+        ctx.fillStyle = "#888";
+        ctx.textAlign = "center";
+        ctx.fillText("No rating data available for this selection.", ctx.canvas.width / 2, 50);
+        return;
+    }
+
+    // 3. 统计数据
+    const ratingCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    validRatings.forEach(row => {
+        ratingCounts[row.rating]++;
+    });
+
+    const chartData = {
+        labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
+        datasets: [{
+            label: '# of Student Ratings',
+            data: Object.values(ratingCounts),
+            backgroundColor: 'rgba(79, 70, 229, 0.6)',
+            borderColor: 'rgba(79, 70, 229, 1)',
+            borderWidth: 1
+        }]
+    };
+    
+    // 4. 创建新图表
+    window.myRatingChart = new Chart(ctx, {
+        type: 'bar',
+        data: chartData,
+        options: {
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+            }
+        }
+    });
+}
+
+
 
             // --- 绑定事件监听器 ---
             generateSummaryBtn.addEventListener('click', fetchAndDisplaySummary);

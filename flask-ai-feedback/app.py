@@ -289,11 +289,12 @@ def get_all_feedback():
 @app.route('/api/get-summary', methods=['GET'])
 def get_summary():
     """API endpoint to generate an AI-powered summary of all answers."""
+    prompt_id_filter = request.args.get('prompt_id')
+    query = Response.query.filter(Response.is_ai_generated == False)
+    if prompt_id_filter and prompt_id_filter != 'all':
+        query = query.filter(Response.question == prompt_id_filter)
     # 使用SQLAlchemy查询
-    responses = Response.query.filter(
-        Response.student_answer != '',
-        Response.is_ai_generated == False
-    ).all()
+    responses = query.all()
     if not responses:
         return jsonify({'summary': 'Not enough data to generate a summary.'})
 
