@@ -257,20 +257,32 @@ def dashboard():
 
 @app.route('/api/get-all-feedback', methods=['GET'])
 def get_all_feedback():
-    responses = Response.query.order_by(Response.timestamp.desc()).all()
+    # 从URL的查询参数中获取 prompt_id
+    prompt_id_filter = request.args.get('prompt_id')
+    
+    # 构建基础查询
+    query = Response.query
+    
+    # 如果提供了 prompt_id，则添加筛选条件
+    if prompt_id_filter:
+        query = query.filter(Response.question == prompt_id_filter)
+    
+    # 按时间降序排序并获取所有结果
+    responses = query.order_by(Response.timestamp.desc()).all()
+    
     output = []
     for r in responses:
         output.append({
             'id': r.id,
             'student_id': r.student_id,
-            'question': r.question,
+            'question': r.question, # 这个字段就是 prompt_id
             'student_answer': r.student_answer,
             'ai_feedback': r.ai_feedback,
             'timestamp': r.timestamp.isoformat(),
             'rating': r.rating,
             'feedback_comment': r.feedback_comment,
             'is_ai_generated': r.is_ai_generated,
-            'performance_grade': r.performance_grade # <-- 新增这一行
+            'performance_grade': r.performance_grade
         })
     return jsonify(output)
 
@@ -354,6 +366,25 @@ def get_question_details(prompt_id):
     except Exception as e:
         print(f"Error reading questions.json: {e}")
         return jsonify({'error': 'Internal server error'}), 500
-
+@app.route('/api/get-unique-problems', methods=['GET'])
+def get_unique_problems():
+    try:
+        # 从 questions.json 加载所有问题的信息
+        with open('questions.json', 'r', encoding='utf-8') as f:
+            questions = json.load(f)
+        
+        # 将其格式化为前端需要的列表
+        problem_list = []
+        for prompt_id, details in questions.items():
+            problem_list.append({
+                'prompt_id': prompt_id,
+                'title': details.get('title', 'Untitled Question')
+            })
+            
+        return jsonify(problem_list)
+        
+    except Exception as e:
+        print(f"Error reading questions.json for unique problems: {e}")
+        return jsonify([]), 500
 if __name__ == '__main__':
     app.run(debug=True, port=5001, host='0.0.0.0')
