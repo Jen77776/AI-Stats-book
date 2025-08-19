@@ -33,7 +33,7 @@ This project enhances the learning experience with features for both students an
 ## 🛠️ Technology Stack
 
 * **Backend**: Python, Flask, SQLAlchemy
-* **Frontend**: HTML, CSS, JavaScript, Chart.js
+* **Frontend**: HTML, CSS, JavaScript, Chart.js, Quarto
 * **Database**: PostgreSQL (for production), SQLite (for local development)
 * **AI Model**: Google Gemini 1.5 Flash
 * **Deployment**: Render (for Backend & Dashboard), Quarto Pub / GitHub Pages (for Frontend Book)
@@ -43,7 +43,7 @@ This project enhances the learning experience with features for both students an
 ## 📁 Project Structure
 
 The project is structured into two main components: a Flask backend and a Quarto frontend.
-
+```
 /AI_BIOSTATS_TUTOR_PROJECT/
 ├── 📁 flask-backend/
 │   ├── app.py                 # Main Flask application logic
@@ -55,17 +55,20 @@ The project is structured into two main components: a Flask backend and a Quarto
 │       └── chapter5_q8.txt      # AI prompts for specific questions
 │
 └── 📁 quarto-book/
-├── index.qmd                # Example chapter with embedded widget
-├── widget.html              # The student-facing HTML widget
-├── widget-script.js         # Frontend logic for the widget
-├── _quarto.yml              # Quarto book configuration
-└── ...                      # Other book files (.qmd, images, etc.)
----
+    ├── index.qmd                # Example chapter with embedded widget
+    ├── widget.html              # The student-facing HTML widget
+    ├── widget-script.js         # Frontend logic for the widget
+    ├── _quarto.yml              # Quarto book configuration
+    └── ...                      # Other book files (.qmd, images, etc.)
+```
 
+
+---
 ## ⚙️ Setup and Configuration
 
 ### Prerequisites
 * Python (3.9+)
+* R (4.0+)
 * Quarto CLI
 
 ### 1. Backend Setup (`flask-backend/`)
@@ -77,14 +80,14 @@ The project is structured into two main components: a Flask backend and a Quarto
     # venv\Scripts\activate   # On Windows
     ```
 
-2.  **Install Dependencies**:
+2.  **Install Python Dependencies**:
     ```bash
     pip install -r requirements.txt
     ```
 
 3.  **Configure Environment Variables**:
     * Create a file named `.env` in the backend's root directory.
-    * Add your secret keys to this file. The database URI is automatically created by services like Render.
+    * Add your secret keys to this file. The database URI is often provided by hosting services like Render.
         ```env
         GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
         DATABASE_URL="YOUR_POSTGRESQL_DATABASE_URI"
@@ -92,7 +95,15 @@ The project is structured into two main components: a Flask backend and a Quarto
     * **Important**: Add `.env` to your `.gitignore` file to keep your keys secure.
 
 ### 2. Frontend Setup (`quarto-book/`)
-The frontend is a standard Quarto project. No special package installation is required beyond the main Quarto CLI.
+
+While the widget is HTML/JS, the Quarto book may rely on R to render code chunks.
+
+1.  **Start an R session** in your terminal by typing `R`.
+2.  **Install necessary R packages** from within the R console:
+    ```r
+    install.packages(c("knitr", "rmarkdown", "tidyverse"))
+    ```
+3.  Exit R by typing `q()`.
 
 ---
 
@@ -108,7 +119,7 @@ You'll need **two separate terminals** running at the same time.
     ```bash
     python app.py
     ```
-    The backend server will now be running on `http://12.0.0.1:5001`.
+    The backend server will now be running on `http://127.0.0.1:5001`.
 
 ### Terminal 2: Preview the Frontend Book
 
@@ -130,7 +141,7 @@ Adding a new interactive question is a simple three-step process:
 2.  **Update `questions.json`**: In the `flask-backend/` directory, add a new entry to the `questions.json` file. The key (e.g., `"new_question_prompt"`) must match the name of your new prompt file.
     ```json
     {
-      "chapter5_q8": { ... },
+      "chapter5_q8": { "...": "..." },
       "new_question_prompt": {
         "title": "New Question Title",
         "question_text": "This is the text of the new question for students.",
@@ -140,8 +151,8 @@ Adding a new interactive question is a simple three-step process:
     ```
 
 3.  **Embed in Quarto**: In your `.qmd` file inside the `quarto-book/` directory, embed the widget using an `iframe`, pointing to the new `prompt_id`.
-    ````
+    ```
     ```{=html}
     <iframe src="widget.html?prompt_id=new_question_prompt" width="100%" height="800" style="border:none;"></iframe>
     ```
-    ````
+    ```
