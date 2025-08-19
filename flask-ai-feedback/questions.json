@@ -18,5 +18,10 @@
   "title": "Identifying Bias in a Study",
   "question_text": "A pharmaceutical company wants to test its new headache drug. They recruit volunteers through a newspaper ad and give the new drug to everyone. 90% of the volunteers report that their headache improved. The company claims the drug is highly effective. What is a major flaw in this study design?",
   "image_src": null
+},
+"choosing_test": {
+  "title": "Choosing the Right Statistical Test",
+  "question_text": "You want to compare the average height of male and female students at a university. You have two independent samples of heights (one for males, one for females). Which statistical test would be most appropriate to determine if there is a significant difference in average height between the two groups?",
+  "image_src": null
 }
 }
