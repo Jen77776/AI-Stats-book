@@ -13,5 +13,10 @@
   "title": "Interpreting P-Values",
   "question_text": "A study comparing a new drug to a placebo finds a p-value of 0.03 for the reduction in blood pressure. In one sentence, how would you correctly interpret this p-value?",
   "image_src": null
+},
+"study_bias": {
+  "title": "Identifying Bias in a Study",
+  "question_text": "A pharmaceutical company wants to test its new headache drug. They recruit volunteers through a newspaper ad and give the new drug to everyone. 90% of the volunteers report that their headache improved. The company claims the drug is highly effective. What is a major flaw in this study design?",
+  "image_src": null
 }
 }
