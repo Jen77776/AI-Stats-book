@@ -8,6 +8,10 @@
     "title": "Chapter 5, Question 8: Summarizing Center",
     "question_text": "Examine this plot showing gene expression levels in different tissues. Identify at least three weaknesses in its design. Then say which one you think is the most serious and why.",
     "image_src": "gene_expression_plot.png"
-  }
-
+  },
+  "p_value_interpretation": {
+  "title": "Interpreting P-Values",
+  "question_text": "A study comparing a new drug to a placebo finds a p-value of 0.03 for the reduction in blood pressure. In one sentence, how would you correctly interpret this p-value?",
+  "image_src": null
+}
 }
