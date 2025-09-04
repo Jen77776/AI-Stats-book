@@ -161,7 +161,68 @@ The frontend Quarto book is deployed automatically via GitHub Actions.
 2.  **Auto-Deploy:** After the workflow is set up, any time you `git push` changes to your `quarto-book` repository, GitHub Actions will automatically build and deploy your site to GitHub Pages.
 
 
+# How to Integrate the AI Tutor into Your Quarto Book
 
+This guide will walk you through the simple steps required to embed the AI-Powered Tutor widget into your own Quarto textbook. This will allow you to add interactive, auto-grading questions directly into your course materials, using the existing, centralized backend service.
+
+### Prerequisites
+
+* A Quarto book project where you want to add the interactive widgets.
+
+---
+
+### Step 1: Get the Widget Files
+
+To get started, you need two essential frontend files. These files contain the universal student-facing interface for the tutor.
+
+1.  Obtain the following two files from the project administrator:
+    * `widget.html`
+    * `widget-script.js`
+2.  Place both of these files in the **root directory** of your Quarto book project, alongside your `.qmd` files.
+
+### Step 2: Create Your Questions
+
+All question content (the text, grading rubrics, and images) is managed through a central web portal. You do not need to edit any local files to create new questions.
+
+1.  Open your web browser and navigate to the **Question Creator page**:
+    * **[https://ai-stats-book.onrender.com/create](https://ai-stats-book.onrender.com/create)**
+
+2.  Fill out the form for each new question you want to create:
+    * **Question Title:** A descriptive title for the question.
+    * **Question Text:** The full text of the question as students will see it.
+    * **AI Grading Instructions:** The detailed rubric and guidelines for the AI to use when evaluating student answers.
+    * **Image (Optional):** You can upload an image to be displayed with the question.
+
+3.  Click the **"Create Question"** button to save it to the central database.
+
+### Step 3: Embed the Widget in Your Book
+
+After you successfully create a question in the web portal, the page will automatically generate an `<iframe>` code snippet. This is the code you need to place in your book.
+
+1.  **Copy** the entire `<iframe>` code snippet provided on the success page. It will look something like this:
+    ```html
+    <iframe src="widget.html?prompt_id=your-new-question-id-12345" width="100%" height="800" style="border:none;"></iframe>
+    ```
+
+2.  Open the `.qmd` chapter file where you want the question to appear.
+
+3.  **Paste** the `<iframe>` snippet directly into the file at the desired location. Make sure it is inside a raw HTML block in your Markdown file:
+
+    ````
+    ```{=html}
+    <iframe src="widget.html?prompt_id=your-new-question-id-12345" width="100%" height="800" style="border:none;"></iframe>
+    ```
+    ````
+
+### Step 4: Publish Your Book
+
+That's it! Once the `iframe` code is in place, you can preview and publish your Quarto book using your normal workflow (e.g., running `quarto publish gh-pages`). The embedded widget will automatically fetch the question content from the backend and be ready for your students to use.
+
+---
+#### An Important Note on Shared Resources
+
+Please be aware that this service uses a centralized backend. This means all questions created by any instructor are stored in the same database. All student responses will also be visible on the central instructor dashboard, which can be accessed here:
+* **Instructor Dashboard:** [https://ai-stats-book.onrender.com/dashboard](https://ai-stats-book.onrender.com/dashboard)
 
 
 
