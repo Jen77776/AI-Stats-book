@@ -71,11 +71,13 @@
         <div style="max-width: 600px; margin-bottom: 2em;">
             <canvas id="ratingHistogram"></canvas>
         </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2>All Student Responses</h2>
-            <button id="clear-db-btn" style="background-color: #ef4444;">Clear All Data</button>
-        </div>
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h2>All Student Responses</h2>
+    <div class="button-group">
+        <button id="clear-problem-btn" style="background-color: #f97316; display: none; margin-right: 1em;">Clear Data for This Problem</button>
+        <button id="clear-all-btn" style="background-color: #ef4444;">Clear All Data</button>
+    </div>
+</div>
         <div style="overflow-x:auto;">
             <table id="feedback-table">
                 <thead>
@@ -96,151 +98,112 @@
     </div>
     
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // --- 3. 在JavaScript中添加绘图逻辑 ---
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- DOM Element Cache ---
+        const feedbackTableBody = document.querySelector('#feedback-table tbody');
+        const totalSubmissionsEl = document.getElementById('total-submissions');
+        const aiGeneratedCountEl = document.getElementById('ai-generated-count');
+        const generateSummaryBtn = document.getElementById('generate-summary-btn');
+        const summaryLoader = document.getElementById('summary-loader');
+        const summaryContent = document.getElementById('summary-content');
+        const problemSelector = document.getElementById('problem-selector');
+        // --- 修正: 使用了正确的按钮 ID ---
+        const clearAllBtn = document.getElementById('clear-all-btn'); 
+        const clearProblemBtn = document.getElementById('clear-problem-btn');
 
-            const feedbackTableBody = document.querySelector('#feedback-table tbody');
-            const totalSubmissionsEl = document.getElementById('total-submissions'); // 获取新元素
-            const aiGeneratedCountEl = document.getElementById('ai-generated-count'); // 获取新元素
-            const generateSummaryBtn = document.getElementById('generate-summary-btn');
-            const summaryLoader = document.getElementById('summary-loader');
-            const summaryContent = document.getElementById('summary-content');
-            const clearDbBtn = document.getElementById('clear-db-btn');
-            const problemSelector = document.getElementById('problem-selector');
-            async function fetchAndDisplayFeedback() {
-                const selectedProblemId = problemSelector.value;
-                let apiUrl = '/api/get-all-feedback';
-                if (selectedProblemId && selectedProblemId !== 'all') {
-            apiUrl += `?prompt_id=${selectedProblemId}`;
-        }
-                try {
-                    const response = await fetch(apiUrl);
-                    const data = await response.json();
-                    let aiCount = 0;
-                    data.forEach(row => {
-                        if (row.is_ai_generated) {
-                            aiCount++;
-                        }
-                    });
-                    totalSubmissionsEl.innerText = data.length;
-                    aiGeneratedCountEl.innerText = aiCount;
-                    feedbackTableBody.innerHTML = '';
-                    data.forEach(row => {
-                        const tr = document.createElement('tr');
-                        let answerCellContent = row.student_answer;
-                        if (row.is_ai_generated) {
-                            answerCellContent += `<br><span class="ai-flag">Flagged as AI-Generated</span>`;
-                        }
-                       tr.innerHTML = `
-                            <td>${row.id}</td>
-                            <td>${new Date(row.timestamp).toLocaleString()}</td>
-                            <td>${row.student_id || ''}</td>
-                            <td>${answerCellContent}</td>
-                            <td>${row.ai_feedback}</td>
-                            <td>${row.rating || ''}</td>
-                            <td>${row.feedback_comment || ''}</td>
-                        `;
-                        feedbackTableBody.appendChild(tr);
-                    });
-
-                    // 数据加载后，调用新函数来渲染直方图
-                    renderRatingHistogram(data);
-                    renderPerformanceChart(data);
-
-                } catch (error) {
-                    console.error('Error fetching feedback data:', error);
-                }
+        // --- Core Functions ---
+        async function fetchAndDisplayFeedback() {
+            const selectedProblemId = problemSelector.value;
+            let apiUrl = '/api/get-all-feedback';
+            if (selectedProblemId && selectedProblemId !== 'all') {
+                apiUrl += `?prompt_id=${selectedProblemId}`;
             }
-               async function populateProblemSelector() {
-        try {
-            // 我们需要一个新的API端点来获取所有唯一的问题ID
-            const response = await fetch('/api/get-unique-problems'); 
-            const problems = await response.json();
-            
-            problems.forEach(problem => {
-                const option = document.createElement('option');
-                option.value = problem.prompt_id;
-                // 这里可以显示问题的标题而不是ID，需要API返回更多信息
-                option.innerText = problem.title || problem.prompt_id; 
-                problemSelector.appendChild(option);
-            });
-        } catch (error) {
-            console.error('Error fetching unique problems:', error);
-        }
-    }
-      async function fetchAndDisplaySummary() {
-                summaryLoader.style.display = 'block';
-                summaryContent.style.display = 'none';
-                generateSummaryBtn.disabled = true;
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                
+                let aiCount = 0;
+                data.forEach(row => { if (row.is_ai_generated) aiCount++; });
+                totalSubmissionsEl.innerText = data.length;
+                aiGeneratedCountEl.innerText = aiCount;
 
-                const selectedProblemId = document.getElementById('problem-selector').value;
-                const apiUrl = `/api/get-summary?prompt_id=${selectedProblemId}`;
-
-                await fetchAndDisplayFeedback();
-
-                try {
-                    const response = await fetch(apiUrl);
-                    const data = await response.json();
-                    
-                    if (data.summary) {
-                        // 修复的 Markdown 到 HTML 转换逻辑
-                        let formattedSummary = data.summary;
-                        
-                        // 1. 处理标题（从最多#开始，避免重复匹配）
-                        formattedSummary = formattedSummary.replace(/### (.*)/g, '<h3>$1</h3>');
-                        formattedSummary = formattedSummary.replace(/## (.*)/g, '<h2>$1</h2>');
-                        formattedSummary = formattedSummary.replace(/^# (.*)/gm, '<h1>$1</h1>');
-                        
-                        // 2. 处理粗体和斜体
-                        formattedSummary = formattedSummary.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-                        formattedSummary = formattedSummary.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-                        
-                        // 3. 处理列表项 - 修复版本
-                        // 首先将 "* item" 转换为临时标记
-                        formattedSummary = formattedSummary.replace(/^\* (.*)$/gm, '|||LISTITEM|||$1|||ENDLISTITEM|||');
-                        
-                        // 然后找到连续的列表项并用 <ul> 包裹
-                        formattedSummary = formattedSummary.replace(/((\|\|\|LISTITEM\|\|\|.*?\|\|\|ENDLISTITEM\|\|\|\n?)+)/g, function(match) {
-                            // 将每个列表项转换为 <li>
-                            const listItems = match.replace(/\|\|\|LISTITEM\|\|\|(.*?)\|\|\|ENDLISTITEM\|\|\|\n?/g, '<li>$1</li>');
-                            return '<ul>' + listItems + '</ul>';
-                        });
-                        
-                        // 处理段落
-                        formattedSummary = formattedSummary.replace(/\n\n/g, '</p><p>');
-                        formattedSummary = '<p>' + formattedSummary + '</p>';
-                        
-                        // 清理多余的空段落
-                        formattedSummary = formattedSummary.replace(/<p><\/p>/g, '');
-                        formattedSummary = formattedSummary.replace(/<p>(<h[1-6]>)/g, '$1');
-                        formattedSummary = formattedSummary.replace(/(<\/h[1-6]>)<\/p>/g, '$1');
-                        formattedSummary = formattedSummary.replace(/<p>(<ul>)/g, '$1');
-                        formattedSummary = formattedSummary.replace(/(<\/ul>)<\/p>/g, '$1');
-
-                        summaryContent.innerHTML = formattedSummary;
-                        summaryContent.style.display = 'block';
-                    } else {
-                        summaryContent.innerText = data.error || 'An unknown error occurred.';
-                        summaryContent.style.display = 'block';
+                feedbackTableBody.innerHTML = '';
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    let answerCellContent = row.student_answer;
+                    if (row.is_ai_generated) {
+                        answerCellContent += `<br><span class="ai-flag">Flagged as AI-Generated</span>`;
                     }
-                } catch (error) {
-                    console.error('Error fetching summary:', error);
-                    summaryContent.innerText = 'An error occurred while fetching the summary.';
-                    summaryContent.style.display = 'block';
-                } finally {
-                    summaryLoader.style.display = 'none';
-                    generateSummaryBtn.disabled = false;
-                }
+                    tr.innerHTML = `
+                        <td>${row.id}</td>
+                        <td>${new Date(row.timestamp).toLocaleString()}</td>
+                        <td>${row.student_id || ''}</td>
+                        <td>${answerCellContent}</td>
+                        <td>${row.ai_feedback}</td>
+                        <td>${row.rating || ''}</td>
+                        <td>${row.feedback_comment || ''}</td>
+                    `;
+                    feedbackTableBody.appendChild(tr);
+                });
+
+                renderRatingHistogram(data);
+                renderPerformanceChart(data);
+
+            } catch (error) {
+                console.error('Error fetching feedback data:', error);
             }
-            function renderPerformanceChart(data) {
+        }
+
+        async function populateProblemSelector() {
+            try {
+                const response = await fetch('/api/get-unique-problems');
+                const problems = await response.json();
+                problems.forEach(problem => {
+                    const option = document.createElement('option');
+                    option.value = problem.prompt_id;
+                    option.innerText = problem.title || problem.prompt_id;
+                    problemSelector.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error fetching unique problems:', error);
+            }
+        }
+        
+        async function fetchAndDisplaySummary() {
+            summaryLoader.style.display = 'block';
+            summaryContent.style.display = 'none';
+            generateSummaryBtn.disabled = true;
+
+            const selectedProblemId = document.getElementById('problem-selector').value;
+            const apiUrl = `/api/get-summary?prompt_id=${selectedProblemId}`;
+
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                if (data.summary) {
+                    summaryContent.innerHTML = data.summary; // 假设后端已处理好Markdown
+                    summaryContent.style.display = 'block';
+                } else {
+                    summaryContent.innerText = data.error || 'An unknown error occurred.';
+                    summaryContent.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error fetching summary:', error);
+            } finally {
+                summaryLoader.style.display = 'none';
+                generateSummaryBtn.disabled = false;
+            }
+        }
+
+function renderPerformanceChart(data) {
     const ctx = document.getElementById('performanceChart').getContext('2d');
     
-    // 1. 确保在做任何事之前，先销毁旧图表
+    // 确保在做任何事之前，先销毁旧图表
     if(window.myPerformanceChart) {
         window.myPerformanceChart.destroy();
     }
 
-    // 2. 检查并筛选有效数据
+    // 检查并筛选有效数据
     const validGrades = data.filter(row => row.performance_grade);
     if (validGrades.length === 0) {
         // 如果没有数据，显示提示并退出
@@ -252,13 +215,11 @@
         return;
     }
 
-    // 3. 仅统计一次数据
     const gradeCounts = {};
     validGrades.forEach(row => {
         gradeCounts[row.performance_grade] = (gradeCounts[row.performance_grade] || 0) + 1;
     });
 
-    // 4. 仅定义一次图表数据
     const chartData = {
         labels: Object.keys(gradeCounts),
         datasets: [{
@@ -274,7 +235,6 @@
         }]
     };
     
-    // 5. 创建新图表
     window.myPerformanceChart = new Chart(ctx, {
         type: 'pie',
         data: chartData,
@@ -287,16 +247,15 @@
         }
     });
 }
-            // 新增的函数，专门用于渲染直方图
 function renderRatingHistogram(data) {
     const ctx = document.getElementById('ratingHistogram').getContext('2d');
     
-    // 1. 必须先销毁旧图表实例
+    // 必须先销毁旧图表实例
     if (window.myRatingChart) {
         window.myRatingChart.destroy();
     }
 
-    // 2. 检查是否有有效的评分数据
+    // 检查是否有有效的评分数据
     const validRatings = data.filter(row => row.rating >= 1 && row.rating <= 5);
     if (validRatings.length === 0) {
         // 如果没有数据，显示提示并退出
@@ -308,7 +267,6 @@ function renderRatingHistogram(data) {
         return;
     }
 
-    // 3. 统计数据
     const ratingCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     validRatings.forEach(row => {
         ratingCounts[row.rating]++;
@@ -325,51 +283,65 @@ function renderRatingHistogram(data) {
         }]
     };
     
-    // 4. 创建新图表
     window.myRatingChart = new Chart(ctx, {
         type: 'bar',
         data: chartData,
         options: {
             scales: {
                 y: { beginAtZero: true, ticks: { stepSize: 1 } }
+            },
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: 'Student Ratings of AI Feedback' }
             }
         }
     });
 }
 
-
-
-            // --- 绑定事件监听器 ---
-            generateSummaryBtn.addEventListener('click', fetchAndDisplaySummary);
-            
-            clearDbBtn.addEventListener('click', function() {
-                const isConfirmed = window.confirm("Are you sure you want to permanently delete ALL student responses? This action cannot be undone.");
-                if (isConfirmed) {
-                    fetch('/api/clear-all-feedback', {
-                        method: 'POST',
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if(data.status === 'success') {
-                            alert('All feedback data has been cleared.');
-                            fetchAndDisplayFeedback();
-                            summaryContent.style.display = 'none';
-                        } else {
-                            alert('An error occurred: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error clearing database:', error);
-                        alert('A connection error occurred.');
-                    });
-                }
-            });
-            problemSelector.addEventListener('change', fetchAndDisplayFeedback);
-            // --- 页面初次加载时执行 ---
-    populateProblemSelector(); // 先填充问题列表
-    fetchAndDisplayFeedback(); // 然后加载初始数据（所有问题）
+        // --- Event Listeners (全部放在这里) ---
+        problemSelector.addEventListener('change', () => {
+            fetchAndDisplayFeedback();
+            if (problemSelector.value === 'all') {
+                clearProblemBtn.style.display = 'none';
+            } else {
+                clearProblemBtn.style.display = 'inline-block';
+            }
         });
-    </script>
+
+        generateSummaryBtn.addEventListener('click', fetchAndDisplaySummary);
+
+        clearAllBtn.addEventListener('click', function() {
+            if (confirm("Are you sure you want to permanently delete ALL data?")) {
+                fetch('/api/clear-all-feedback', { method: 'POST' })
+                    .then(res => res.json()).then(data => {
+                        alert('All data has been cleared.');
+                        fetchAndDisplayFeedback();
+                    }).catch(err => alert('An error occurred.'));
+            }
+        });
+
+        clearProblemBtn.addEventListener('click', function() {
+            const selectedProblemId = problemSelector.value;
+            const selectedProblemTitle = problemSelector.options[problemSelector.selectedIndex].text;
+            if (!selectedProblemId || selectedProblemId === 'all') return;
+
+            if (confirm(`Delete all responses for "${selectedProblemTitle}"?`)) {
+                fetch('/api/clear-problem-feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt_id: selectedProblemId })
+                }).then(res => res.json()).then(data => {
+                    alert(`Data for "${selectedProblemTitle}" has been cleared.`);
+                    fetchAndDisplayFeedback();
+                }).catch(err => alert('An error occurred.'));
+            }
+        });
+
+        // --- Initial Page Load ---
+        populateProblemSelector();
+        fetchAndDisplayFeedback();
+    });
+</script>
 
 </body>
 </html>

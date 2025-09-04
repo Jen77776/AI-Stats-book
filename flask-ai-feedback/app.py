@@ -301,7 +301,57 @@ def get_all_feedback():
             'performance_grade': r.performance_grade
         })
     return jsonify(output)
+@app.route('/api/clear-problem-feedback', methods=['POST'])
+def clear_problem_feedback():
+    """
+    Deletes all records for a specific problem (prompt_id).
+    """
+    data = request.get_json()
+    prompt_id = data.get('prompt_id')
 
+    if not prompt_id:
+        return jsonify({'status': 'error', 'message': 'A prompt_id must be provided.'}), 400
+
+    try:
+        # --- 1. 从 PostgreSQL 数据库中删除特定问题的数据 ---
+        responses_to_delete = Response.query.filter_by(question=prompt_id)
+        num_deleted = responses_to_delete.delete()
+        db.session.commit()
+        print(f"Successfully deleted {num_deleted} responses for prompt_id '{prompt_id}' from the database.")
+
+        # --- 2. 从 Google Sheet 中删除对应的行 (这部分比较复杂) ---
+        try:
+            scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/drive']
+            creds = ServiceAccountCredentials.from_json_keyfile_name("google_credentials.json", scope)
+            client = gspread.authorize(creds)
+            sheet = client.open("AI Biostats Feedback").sheet1
+            
+            all_records = sheet.get_all_records() # 获取所有数据以便查找
+            rows_to_delete_indices = []
+            
+            # 假设 'question' 列是第4列 (A=1, B=2, C=3, D=4)
+            # gspread 的 get_all_records() 会使用 header 作为 key
+            for i, record in enumerate(all_records):
+                if record.get('question') == prompt_id:
+                    # i 是从0开始的索引, 但 gspread 的行号从1开始, 且有表头
+                    # 所以要删除的行号是 i + 2
+                    rows_to_delete_indices.append(i + 2)
+
+            # 为了避免删除时行号错乱，必须从后往前删除
+            for row_index in sorted(rows_to_delete_indices, reverse=True):
+                sheet.delete_rows(row_index)
+            print(f"Successfully deleted rows for prompt_id '{prompt_id}' from Google Sheet.")
+
+        except Exception as e:
+            print(f"Google Sheet delete error: {e}")
+            # 即使 GSheet 删除失败，我们仍然可以继续，因为数据库已经成功了
+        
+        return jsonify({'status': 'success', 'message': f'All data for problem {prompt_id} has been cleared.'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error clearing data for problem {prompt_id}: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 @app.route('/api/get-summary', methods=['GET'])
 def get_summary():
     """API endpoint to generate an AI-powered summary of all answers."""
