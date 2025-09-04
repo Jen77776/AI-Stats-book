@@ -10,17 +10,31 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
 import re 
-
+from werkzeug.utils import secure_filename
+import cloudinary
+import cloudinary.uploader
 
 load_dotenv()
 app = Flask(__name__, instance_relative_config=True, template_folder='templates')
 CORS(app)
-
+cloudinary.config( 
+  cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"), 
+  api_key = os.getenv("CLOUDINARY_API_KEY"), 
+  api_secret = os.getenv("CLOUDINARY_API_SECRET") 
+)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 print(f"--- DATABASE URI IN USE: {app.config['SQLALCHEMY_DATABASE_URI']} ---")
-
+class Question(db.Model):
+    __tablename__ = 'questions'
+    id = db.Column(db.Integer, primary_key=True)
+    prompt_id = db.Column(db.String(100), unique=True, nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    question_text = db.Column(db.Text, nullable=False)
+    ai_prompt = db.Column(db.Text, nullable=False) # 替代 .txt 文件
+    image_url = db.Column(db.String(255), nullable=True) # 替代 JSON 中的 image_src
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 class Response(db.Model):
     __tablename__ = 'responses'
     id = db.Column(db.Integer, primary_key=True)
@@ -167,12 +181,15 @@ def get_feedback_and_grade(prompt_id, student_answer):
     if not model:
         return "AI model failed to load.", "N/A"
 
-    try:
-        prompt_path = os.path.join('prompts', f'{prompt_id}.txt')
-        with open(prompt_path, 'r', encoding='utf-8') as f:
-            system_prompt = f.read()
+    # 从数据库获取问题和对应的AI指令
+    question = Question.query.filter_by(prompt_id=prompt_id).first()
+    if not question:
+        return "Error: The requested prompt (question) could not be found.", "Error"
 
-        # 新的、要求返回JSON的Prompt
+    system_prompt = question.ai_prompt # 从数据库字段获取 AI 指令
+
+    try:
+        # 新的、要求返回JSON的Prompt (这部分逻辑保持不变)
         full_prompt = f"""
         {system_prompt}
 
@@ -180,12 +197,11 @@ def get_feedback_and_grade(prompt_id, student_answer):
         TASK:
         Based on the rubric and guidelines above, analyze the following student's answer.
         You MUST respond with only a valid JSON object containing two keys:
-        1.  "grade": A string classifying the student's performance based on the rubric (e.g., "Great answer", "Good answer", "Thinking start", "Too superficial", "Misunderstood / incorrect").
-        2.  "feedback": A string containing the helpful, warm, and encouraging feedback for the student.
+        1.  "grade": A string classifying the student's performance...
+        2.  "feedback": A string containing the helpful, warm, and encouraging feedback...
 
         Student's answer: "{student_answer}"
         """
-
         response = model.generate_content(full_prompt)
         cleaned_text = clean_json_from_ai_response(response.text)
         result_json = json.loads(cleaned_text)
@@ -354,38 +370,84 @@ def clear_all_feedback():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 @app.route('/api/question-details/<string:prompt_id>')
 def get_question_details(prompt_id):
-    try:
-        with open('questions.json', 'r', encoding='utf-8') as f:
-            questions = json.load(f)
+    # 从数据库查询，而不是读取 questions.json
+    question = Question.query.filter_by(prompt_id=prompt_id).first()
 
-        question_data = questions.get(prompt_id)
-
-        if question_data:
-            return jsonify(question_data)
-        else:
-            return jsonify({'error': 'Question details not found'}), 404
-    except Exception as e:
-        print(f"Error reading questions.json: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+    if question:
+        return jsonify({
+            'title': question.title,
+            'question_text': question.question_text,
+            'image_src': question.image_url # 注意字段名匹配
+        })
+    else:
+        return jsonify({'error': 'Question details not found'}), 404
 @app.route('/api/get-unique-problems', methods=['GET'])
 def get_unique_problems():
     try:
-        # 从 questions.json 加载所有问题的信息
-        with open('questions.json', 'r', encoding='utf-8') as f:
-            questions = json.load(f)
-        
-        # 将其格式化为前端需要的列表
+        # 从数据库查询所有问题
+        all_questions = Question.query.order_by(Question.created_at.desc()).all()
+
         problem_list = []
-        for prompt_id, details in questions.items():
+        for q in all_questions:
             problem_list.append({
-                'prompt_id': prompt_id,
-                'title': details.get('title', 'Untitled Question')
+                'prompt_id': q.prompt_id,
+                'title': q.title
             })
-            
+
         return jsonify(problem_list)
-        
+
     except Exception as e:
-        print(f"Error reading questions.json for unique problems: {e}")
+        print(f"Error getting unique problems from DB: {e}")
         return jsonify([]), 500
+@app.route('/api/create-question', methods=['POST'])
+def create_question():
+    # 这里之后会添加安全验证
+    
+    title = request.form.get('title')
+    question_text = request.form.get('question_text')
+    ai_prompt = request.form.get('ai_prompt')
+    image_file = request.files.get('image')
+
+    if not title or not question_text or not ai_prompt:
+        return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
+
+    # 1. 处理图片上传
+    image_url = None
+    if image_file:
+        try:
+            # 上传到 Cloudinary
+            upload_result = cloudinary.uploader.upload(image_file)
+            image_url = upload_result.get('secure_url')
+        except Exception as e:
+            print(f"Image upload failed: {e}")
+            return jsonify({'status': 'error', 'message': 'Image upload failed'}), 500
+
+    # 2. 生成唯一的 prompt_id
+    # 将标题转换为小写，替换空格为-，并移除特殊字符
+    base_id = re.sub(r'[^a-z0-9-]+', '', title.lower().replace(' ', '-'))
+    # 添加一个时间戳确保唯一性
+    prompt_id = f"{base_id}-{int(datetime.now().timestamp())}"
+
+    # 3. 创建新的 Question 对象并存入数据库
+    new_question = Question(
+        prompt_id=prompt_id,
+        title=title,
+        question_text=question_text,
+        ai_prompt=ai_prompt,
+        image_url=image_url
+    )
+    db.session.add(new_question)
+    db.session.commit()
+
+    # 4. 返回成功信息和新的 prompt_id
+    return jsonify({
+        'status': 'success',
+        'message': 'Question created successfully!',
+        'prompt_id': prompt_id
+    })
+@app.route('/create')
+def create_page():
+    # 这里之后会添加安全验证
+    return render_template('creator.html')
 if __name__ == '__main__':
     app.run(debug=True, port=5001, host='0.0.0.0')

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create New Question</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 2em auto; padding: 1em; line-height: 1.6; }
+        form { display: grid; gap: 1em; }
+        label { font-weight: bold; }
+        input, textarea { padding: 0.5em; font-size: 1em; width: 100%; box-sizing: border-box; }
+        textarea { height: 150px; }
+        button { background-color: #007bff; color: white; padding: 0.8em 1.2em; border: none; cursor: pointer; font-size: 1em; }
+        #success-message { background-color: #d4edda; padding: 1em; margin-top: 1em; border-radius: 5px; display: none; }
+        #iframe-code { font-family: monospace; background: #f4f4f4; padding: 1em; white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+    <h1>Create a New Interactive Question</h1>
+    <form id="create-question-form">
+        <div>
+            <label for="title">Question Title:</label>
+            <input type="text" id="title" name="title" required>
+        </div>
+        <div>
+            <label for="question_text">Question Text (What students see):</label>
+            <textarea id="question_text" name="question_text" required></textarea>
+        </div>
+        <div>
+            <label for="ai_prompt">AI Grading Instructions (The rubric for the AI):</label>
+            <textarea id="ai_prompt" name="ai_prompt" required></textarea>
+        </div>
+        <div>
+            <label for="image">Image (Optional):</label>
+            <input type="file" id="image" name="image" accept="image/*">
+        </div>
+        <button type="submit">Create Question</button>
+    </form>
+
+    <div id="success-message">
+        <h3>🎉 Question Created Successfully!</h3>
+        <p>Copy the code below and paste it into your Quarto (.qmd) file:</p>
+        <pre id="iframe-code"></pre>
+    </div>
+
+    <script>
+        const form = document.getElementById('create-question-form');
+        const successMessage = document.getElementById('success-message');
+        const iframeCodeContainer = document.getElementById('iframe-code');
+
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(form);
+            const submitButton = form.querySelector('button');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Creating...';
+
+            try {
+                const response = await fetch('/api/create-question', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    const promptId = result.prompt_id;
+                    const iframeSrc = `widget.html?prompt_id=${promptId}`;
+                    const iframeHtml = `<iframe src="${iframeSrc}" width="100%" height="800" style="border:none;"></iframe>`;
+                    
+                    iframeCodeContainer.textContent = iframeHtml;
+                    successMessage.style.display = 'block';
+                    form.reset();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('An unexpected error occurred.');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Create Question';
+            }
+        });
+    </script>
+</body>
+</html>
