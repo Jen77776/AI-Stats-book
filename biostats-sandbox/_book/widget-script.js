@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- 3. 页面加载时获取问题内容 ---
     if (promptId) {
         const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-        const apiBaseUrl = 'https://ai-stats-book.onrender.com';
+        const apiBaseUrl = isLocal ? 'http://127.0.0.1:5001' : 'https://ai-stats-book.onrender.com';
         
         fetch(`${apiBaseUrl}/api/question-details/${promptId}`)
             .then(response => response.json())
@@ -53,7 +53,8 @@ document.addEventListener('DOMContentLoaded', function() {
         feedbackContainer.style.display = 'none';
         ratingContainer.style.display = 'none';
         
-       const apiUrl = 'https://ai-stats-book.onrender.com/api/evaluate';
+        const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+        const apiUrl = isLocal ? 'http://127.0.0.1:5001/api/evaluate' : 'https://ai-stats-book.onrender.com/api/evaluate';
 
         fetch(apiUrl, {
             method: 'POST',
@@ -85,7 +86,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const comment = ratingForm.querySelector('#rating-comment').value;
         if (!selectedRating) return;
 
-       const ratingApiUrl = 'https://ai-stats-book.onrender.com/api/rate-feedback';
+        const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+        const ratingApiUrl = isLocal ? 'http://127.0.0.1:5001/api/rate-feedback' : 'https://ai-stats-book.onrender.com/api/rate-feedback';
         
         fetch(ratingApiUrl, {
             method: 'POST',
