@@ -343,6 +343,7 @@ def rate_feedback():
 
 
 @app.route('/api/get-all-feedback', methods=['GET'])
+@login_required
 def get_all_feedback():
     # 从URL的查询参数中获取 prompt_id
     prompt_id_filter = request.args.get('prompt_id')
@@ -373,6 +374,7 @@ def get_all_feedback():
         })
     return jsonify(output)
 @app.route('/api/clear-problem-feedback', methods=['POST'])
+@login_required
 def clear_problem_feedback():
     """
     Deletes all records for a specific problem (prompt_id).
@@ -424,6 +426,7 @@ def clear_problem_feedback():
         print(f"Error clearing data for problem {prompt_id}: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 @app.route('/api/get-summary', methods=['GET'])
+@login_required
 def get_summary():
     """API endpoint to generate an AI-powered summary of all answers."""
     prompt_id_filter = request.args.get('prompt_id')
@@ -459,6 +462,7 @@ def get_summary():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/clear-all-feedback', methods=['POST'])
+@login_required
 def clear_all_feedback():
     """
     Deletes all records from the 'responses' table and clears the Google Sheet.
@@ -503,6 +507,7 @@ def get_question_details(prompt_id):
     else:
         return jsonify({'error': 'Question details not found'}), 404
 @app.route('/api/get-unique-problems', methods=['GET'])
+@login_required
 def get_unique_problems():
     try:
         # 从数据库查询所有问题
