@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <style>
+        body { font-family: sans-serif; max-width: 400px; margin: 5em auto; text-align: center; }
+        .g-sign-in-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 24px;
+            font-size: 16px;
+            font-weight: 500;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            color: #333;
+            box-shadow: 0 2px 4px 0 rgba(0,0,0,0.25);
+        }
+        .g-sign-in-button img {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Instructor Dashboard Login</h1>
+    <p>Please sign in with your authorized Google account.</p>
+    
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div style="color: red; margin-bottom: 1em;">
+          {% for message in messages %}
+            {{ message }}
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <a href="{{ url_for('login') }}" class="g-sign-in-button">
+        <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google logo">
+        Sign in with Google
+    </a>
+</body>
+</html>
