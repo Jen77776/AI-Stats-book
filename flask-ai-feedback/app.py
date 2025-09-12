@@ -10,13 +10,19 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
 import re 
-from werkzeug.utils import secure_filename
 import cloudinary
 import cloudinary.uploader
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask import render_template, redirect, url_for, flash, session # session 需要 import
+from authlib.integrations.flask_client import OAuth # 新增 Authlib import
 
 load_dotenv()
 app = Flask(__name__, instance_relative_config=True, template_folder='templates')
 CORS(app)
+
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+
+# 用户模型
 cloudinary.config( 
   cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"), 
   api_key = os.getenv("CLOUDINARY_API_KEY"), 
@@ -24,8 +30,36 @@ cloudinary.config(
 )
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# 新增 Google OAuth 配置
+app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID')
+app.config['GOOGLE_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET')
 db = SQLAlchemy(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login' # 如果用户未登录，自动跳转到 /login 路由
 print(f"--- DATABASE URI IN USE: {app.config['SQLALCHEMY_DATABASE_URI']} ---")
+class User(UserMixin):
+    def __init__(self, user_id):
+        self.id = user_id
+@login_manager.user_loader
+def load_user(user_id):
+    return User(user_id)
+
+# 4. 初始化 OAuth
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=app.config['GOOGLE_CLIENT_ID'],
+    client_secret=app.config['GOOGLE_CLIENT_SECRET'],
+    access_token_url='https://accounts.google.com/o/oauth2/token',
+    access_token_params=None,
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+    authorize_params=None,
+    api_base_url='https://www.googleapis.com/oauth2/v1/',
+    userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo',
+    client_kwargs={'scope': 'openid email profile'},
+    jwks_uri="https://www.googleapis.com/oauth2/v3/certs",
+)
 class Question(db.Model):
     __tablename__ = 'questions'
     id = db.Column(db.Integer, primary_key=True)
@@ -82,8 +116,47 @@ def get_generic_feedback(prompt_id, student_answer):
     except Exception as e:
         print(f"Error calling Gemini API: {e}")
         return "Sorry, an error occurred while getting feedback from the AI."
+@app.route('/login')
+def login():
+    redirect_uri = url_for('auth', _external=True)
+    return google.authorize_redirect(redirect_uri)
+@app.route('/auth') # 这是您在 Google Cloud 中设置的回调 URI
+def auth():
+    token = google.authorize_access_token()
+    # 获取用户信息
+    user_info = google.get('userinfo').json()
+    user_email = user_info['email']
+
+    # 检查邮箱是否在授权列表中
+    authorized_emails = [email.strip() for email in os.getenv('AUTHORIZED_EMAILS', '').split(',')]
+    if user_email in authorized_emails:
+        # 创建用户对象并登录
+        user = User(user_id=user_email)
+        login_user(user)
+        session['profile'] = user_info # 可选：在 session 中存储用户信息
+        return redirect(url_for('dashboard'))
+    else:
+        # 如果用户不在授权列表，则拒绝访问
+        flash('Sorry, your account is not authorized to access this dashboard.')
+        return redirect(url_for('unauthorized')) # 可以创建一个简单的未授权页面
 
 
+@app.route('/unauthorized')
+def unauthorized():
+    return "<h1>Access Denied</h1><p>Your account is not authorized to view this page.</p>", 403
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    session.pop('profile', None) # 清理 session
+    return redirect("https://accounts.google.com/logout") # 可以选择也从 Google 登出
+# 6. 保持受保护的路由不变
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('dashboard.html')
 def append_to_google_sheet(row_data):
     try:
         # define the scope for Google Sheets and Drive API
@@ -267,11 +340,10 @@ def rate_feedback():
     
     return jsonify({'status': 'error', 'message': 'Response not found'}), 404
 
-@app.route('/dashboard')
-def dashboard():
-    return render_template('dashboard.html')
+
 
 @app.route('/api/get-all-feedback', methods=['GET'])
+@login_required
 def get_all_feedback():
     # 从URL的查询参数中获取 prompt_id
     prompt_id_filter = request.args.get('prompt_id')
@@ -302,6 +374,7 @@ def get_all_feedback():
         })
     return jsonify(output)
 @app.route('/api/clear-problem-feedback', methods=['POST'])
+@login_required
 def clear_problem_feedback():
     """
     Deletes all records for a specific problem (prompt_id).
@@ -353,6 +426,7 @@ def clear_problem_feedback():
         print(f"Error clearing data for problem {prompt_id}: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 @app.route('/api/get-summary', methods=['GET'])
+@login_required
 def get_summary():
     """API endpoint to generate an AI-powered summary of all answers."""
     prompt_id_filter = request.args.get('prompt_id')
@@ -388,6 +462,7 @@ def get_summary():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/clear-all-feedback', methods=['POST'])
+@login_required
 def clear_all_feedback():
     """
     Deletes all records from the 'responses' table and clears the Google Sheet.
@@ -432,6 +507,7 @@ def get_question_details(prompt_id):
     else:
         return jsonify({'error': 'Question details not found'}), 404
 @app.route('/api/get-unique-problems', methods=['GET'])
+@login_required
 def get_unique_problems():
     try:
         # 从数据库查询所有问题
@@ -450,6 +526,7 @@ def get_unique_problems():
         print(f"Error getting unique problems from DB: {e}")
         return jsonify([]), 500
 @app.route('/api/create-question', methods=['POST'])
+@login_required
 def create_question():
     # 这里之后会添加安全验证
     
@@ -496,6 +573,7 @@ def create_question():
         'prompt_id': prompt_id
     })
 @app.route('/create')
+@login_required
 def create_page():
     # 这里之后会添加安全验证
     return render_template('creator.html')
