@@ -63,7 +63,7 @@ def get_question_details(prompt_id):
         })
     return jsonify({'error': 'Question details not found'}), 404
 
-# --- 管理面板 API ---
+# --- Admin Panel API ---
 
 @api_bp.route('/get-unique-problems', methods=['GET'])
 @login_required

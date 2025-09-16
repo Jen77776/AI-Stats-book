@@ -1,9 +1,7 @@
-# 业务逻辑: 封装所有核心功能 (调用AI, 上传图片等)import os
+import os
 import re
 import json
-import gspread
 import google.generativeai as genai
-from oauth2client.service_account import ServiceAccountCredentials
 from .models import Question
 
 # 初始化 Gemini 模型
@@ -90,7 +88,14 @@ def get_summary_from_ai(all_answers_text):
         return "AI model failed to load."
 
     summary_prompt = f"""
-        You are an expert teaching assistant...
+        You are an expert teaching assistant analyzing student responses for a data visualization critique.
+        Based on the following collection of student answers, please provide a concise, high-level summary for the instructor in markdown format.
+
+        Address these key points:
+        1.  **Overall Performance:** Briefly categorize the class's overall performance (e.g., Excellent, Good, Fair, Poor) and why.
+        2.  **Common Points of Confusion:** List 2-3 topics or concepts that students commonly misunderstood or failed to mention.
+        3.  **Creative/Insightful Answers:** Highlight one or two specific, creative, or insightful answers that stood out. Quote a small, impactful part of the answer.
+
         Here are the student answers to analyze:
         ---
         {all_answers_text}
@@ -102,4 +107,3 @@ def get_summary_from_ai(all_answers_text):
     except Exception as e:
         print(f"Summary generation error: {e}")
         return f"Error generating summary: {e}"
-
