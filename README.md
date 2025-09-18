@@ -100,17 +100,17 @@ The project is structured into two main components: a Flask backend and a Quarto
 3.  **Configure Environment Variables:**
     Create a file named `.env` in the backend's root directory and add your secret keys.
  ``ini
-# For local development, use SQLite
+4.  **For local development, use SQLitev**
 DATABASE_URL="sqlite:///local_db.sqlite3"
 
-# API Keys and Credentials
+**API Keys and Credentials**
 GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
 CLOUDINARY_CLOUD_NAME="YOUR_CLOUDINARY_CLOUD_NAME"
 CLOUDINARY_API_KEY="YOUR_CLOUDINARY_API_KEY"
 CLOUDINARY_API_SECRET="YOUR_CLOUDINARY_API_SECRET"
 
-# OAuth Credentials (Example for Google)
-# You must create OAuth 2.0 credentials in your provider's console
+**OAuth Credentials (Example for Google)**
+**You must create OAuth 2.0 credentials in your provider's console**
 GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="YOUR_GOOGLE_CLIENT_SECRET"
 SECRET_KEY="A_STRONG_RANDOM_SECRET_KEY_FOR_SESSIONS"
