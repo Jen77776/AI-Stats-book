@@ -104,18 +104,20 @@ The project is structured into two main components: a Flask backend and a Quarto
 DATABASE_URL="sqlite:///local_db.sqlite3"
 
 **API Keys and Credentials**
+```bash
 GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
 CLOUDINARY_CLOUD_NAME="YOUR_CLOUDINARY_CLOUD_NAME"
 CLOUDINARY_API_KEY="YOUR_CLOUDINARY_API_KEY"
 CLOUDINARY_API_SECRET="YOUR_CLOUDINARY_API_SECRET"
-
+```
 **OAuth Credentials (Example for Google)**
-**You must create OAuth 2.0 credentials in your provider's console**
+You must create OAuth 2.0 credentials in your provider's console
+```bash
 GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="YOUR_GOOGLE_CLIENT_SECRET"
 SECRET_KEY="A_STRONG_RANDOM_SECRET_KEY_FOR_SESSIONS"
 ```
-    **Important:** Add `.env` to your `.gitignore` file to keep your keys secure.
+**Important:** Add `.env` to your `.gitignore` file to keep your keys secure.
 4.  **Initialize the database and run the first migration**
  ``ini
 flask db upgrade
