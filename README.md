@@ -119,7 +119,7 @@ SECRET_KEY="A_STRONG_RANDOM_SECRET_KEY_FOR_SESSIONS"
 ```
 **Important:** Add `.env` to your `.gitignore` file to keep your keys secure.
 4.  **Initialize the database and run the first migration**
- ``ini
+```bash
 flask db upgrade
 ```
 ## ▶️ Running the Project Locally
