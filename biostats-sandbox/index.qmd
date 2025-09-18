@@ -8,6 +8,7 @@ To learn more about Quarto books visit <https://quarto.org/docs/books>.
 <iframe src="widget.html?prompt_id=hemoglobinlevels-1756941138" width="100%" height="800" style="border:none;"></iframe>
 <iframe src="widget.html?prompt_id=data-visualization-challenge-1756956411" width="100%" height="800" style="border:none;"></iframe>
 <iframe src="widget.html?prompt_id=111-1756995834" width="100%" height="800" style="border:none;"></iframe>
+<iframe src="widget.html?prompt_id=777-1757780259" width="100%" height="800" style="border:none;"></iframe>
 <script>
   window.addEventListener('message', function(event) {
     // Check if the message is the one we expect
