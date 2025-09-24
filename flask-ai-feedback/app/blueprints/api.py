@@ -216,3 +216,26 @@ def update_question(prompt_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': f'An error occurred: {e}'}), 500
+@api_bp.route('/delete-question/<string:prompt_id>', methods=['DELETE'])
+@login_required
+def delete_question(prompt_id):
+    """根据 prompt_id 删除一个问题及其所有相关的回答"""
+    question = Question.query.filter_by(prompt_id=prompt_id).first()
+    if not question:
+        return jsonify({'status': 'error', 'message': 'Question not found'}), 404
+
+    try:
+        # 1. 删除所有与该问题相关的回答
+        Response.query.filter_by(question=prompt_id).delete()
+        
+        # 2. 删除问题本身
+        db.session.delete(question)
+        
+        # 3. 提交事务
+        db.session.commit()
+        
+        return jsonify({'status': 'success', 'message': 'Question and all associated responses have been deleted.'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error deleting question {prompt_id}: {e}")
+        return jsonify({'status': 'error', 'message': f'An error occurred: {e}'}), 500
