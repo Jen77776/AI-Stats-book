@@ -175,3 +175,44 @@ def create_question():
         'message': 'Question created successfully!',
         'prompt_id': prompt_id
     })
+@api_bp.route('/get-all-questions', methods=['GET'])
+@login_required
+def get_all_questions():
+    """为编辑页面提供所有问题的完整数据"""
+    try:
+        all_questions = Question.query.order_by(Question.created_at.desc()).all()
+        questions_list = [{
+            'prompt_id': q.prompt_id,
+            'title': q.title,
+            'question_text': q.question_text,
+            'ai_prompt': q.ai_prompt,
+            'image_url': q.image_url
+        } for q in all_questions]
+        return jsonify(questions_list)
+    except Exception as e:
+        print(f"Error getting all questions from DB: {e}")
+        return jsonify([]), 500
+    @api_bp.route('/update-question/<string:prompt_id>', methods=['POST'])
+@login_required
+def update_question(prompt_id):
+    """根据 prompt_id 更新一个已存在的问题"""
+    question = Question.query.filter_by(prompt_id=prompt_id).first()
+    if not question:
+        return jsonify({'status': 'error', 'message': 'Question not found'}), 404
+
+    try:
+        question.title = request.form.get('title', question.title)
+        question.question_text = request.form.get('question_text', question.question_text)
+        question.ai_prompt = request.form.get('ai_prompt', question.ai_prompt)
+        
+        image_file = request.files.get('image')
+        if image_file:
+            # 如果上传了新图片，则上传到 Cloudinary 并更新 URL
+            upload_result = cloudinary.uploader.upload(image_file)
+            question.image_url = upload_result.get('secure_url')
+
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Question updated successfully!'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': f'An error occurred: {e}'}), 500
