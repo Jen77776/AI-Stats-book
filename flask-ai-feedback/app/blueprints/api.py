@@ -192,7 +192,7 @@ def get_all_questions():
     except Exception as e:
         print(f"Error getting all questions from DB: {e}")
         return jsonify([]), 500
-    @api_bp.route('/update-question/<string:prompt_id>', methods=['POST'])
+@api_bp.route('/update-question/<string:prompt_id>', methods=['POST'])
 @login_required
 def update_question(prompt_id):
     """根据 prompt_id 更新一个已存在的问题"""
