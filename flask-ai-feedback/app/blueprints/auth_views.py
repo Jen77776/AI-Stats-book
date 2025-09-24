@@ -55,3 +55,8 @@ def create_page():
 def unauthorized():
     return "<h1>Access Denied</h1><p>Your account is not authorized to view this page.</p>", 403
 
+@auth_bp.route('/edit-problems')
+@login_required
+def edit_problems_page():
+    """渲染问题编辑页面"""
+    return render_template('edit_problems.html')
