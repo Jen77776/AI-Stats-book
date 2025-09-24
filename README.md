@@ -6,7 +6,7 @@ An interactive learning platform that embeds AI-driven tutor widgets directly in
 
 * **Live Quarto Book:** https://jen77776.github.io/AI-Stats-book/
 * **Live Instructor Dashboard:** https://ai-stats-book.onrender.com/dashboard
-* **Live creat Question page:** https://ai-stats-book.onrender.com/create
+* **Live Question management page:** https://ai-stats-book.onrender.com/edit-problems
 
 ## ✨ Core Features
 
@@ -59,7 +59,8 @@ The project is structured into two main components: a Flask backend and a Quarto
 │    ├── 📁 migrations/             # Alembic database migration scripts
 │    ├── 📁 templates/
 │         └── dashboard.html      
-│         └── dashboard.html      
+│         └── edit_problems.html
+│         └── login.html    
 │   ├── run.py                     # New application entry point
 │   ├── config.py                  # Configuration classes
 │   ├── .env                       # Environment variables (secret)
