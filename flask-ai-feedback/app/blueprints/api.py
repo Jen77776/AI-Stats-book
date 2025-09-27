@@ -252,15 +252,15 @@ def test_ai_connection():
         # 我们假设这已经完成。
         # list_models() 是一个轻量级的调用，非常适合用来测试基础连接。
         models = list(genai.list_models())
-        
+        available_model_names = [m.name.replace('models/', '') for m in models]
         # 我们可以检查一下列表中是否包含我们需要的模型
-        model_found = any('gemini-1.5-pro' in m.name for m in models)
+
 
         return jsonify({
             'status': 'success',
             'message': 'Successfully connected to Google AI API and listed models.',
             'total_models_found': len(models),
-            'gemini_1.5_pro_is_available': model_found
+            'available_models': available_model_names
         })
     except Exception as e:
         # 如果失败，返回从 Google API 库收到的确切错误信息，这对调试至关重要！
