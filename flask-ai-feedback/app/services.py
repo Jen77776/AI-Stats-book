@@ -6,7 +6,7 @@ from .models import Question
 
 # 初始化 Gemini 模型
 try:
-    model = genai.GenerativeModel('gemini-1.5-pro-latest')
+    model = genai.GenerativeModel('gemini-pro-latest')
 except Exception as e:
     model = None
     print(f"Failed to initialize Gemini model: {e}")

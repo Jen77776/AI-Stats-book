@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loader.style.display = 'block';
         feedbackContainer.style.display = 'none';
         ratingContainer.style.display = 'none';
-        
+
        const apiUrl = 'https://ai-stats-book.onrender.com/api/evaluate';
 
         fetch(apiUrl, {
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!selectedRating) return;
 
        const ratingApiUrl = 'https://ai-stats-book.onrender.com/api/rate-feedback';
-        
+
         fetch(ratingApiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
