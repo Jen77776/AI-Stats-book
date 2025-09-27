@@ -1,12 +1,12 @@
 # AI-Powered Tutor for Applied Biostatistics 🧪🤖
 
-An interactive learning platform that embeds AI-driven tutor widgets directly into the *Applied Biostatistics* Quarto textbook. This project provides students with instant feedback and equips instructors with a powerful real-time analytics dashboard and a seamless question management system.
+An interactive learning platform that embeds AI-driven tutor widgets directly into the Applied Biostatistics Quarto textbook. This project provides students with instant feedback and equips instructors with a powerful, secure, real-time analytics dashboard and a seamless question management system
 
 ## Live Demonstrations 🚀
 
 * **Live Quarto Book:** https://jen77776.github.io/AI-Stats-book/
 * **Live Instructor Dashboard:** https://ai-stats-book.onrender.com/dashboard
-* **Live creat Question page:** https://ai-stats-book.onrender.com/create
+* **Live Question management page:** https://ai-stats-book.onrender.com/edit-problems
 
 ## ✨ Core Features
 
@@ -19,8 +19,8 @@ This project enhances the learning experience with features for both students an
 * **Optional Anonymity:** Submit answers anonymously or provide an optional student ID.
 
 ### For Instructors
-
-* **Web-Based Question Management:** Add, create, and manage all interactive questions through a simple, password-protected web interface. No more editing files manually!
+* **Secure User Authentication:** All instructor-facing pages and APIs are protected via a robust OAuth login system, ensuring your data is safe and accessible only by authorized users.
+* **Web-Based Question Management:** Add, create, and manage all interactive questions through a simple, secure web interface.
 * **Real-Time Analytics Dashboard:** A comprehensive dashboard to monitor class performance and engagement.
 * **Performance Overview:** Visualize student performance grades with an aggregated pie chart.
 * **Feedback Quality Analysis:** Understand how students rate the AI's feedback with a bar chart overview.
@@ -31,6 +31,7 @@ This project enhances the learning experience with features for both students an
 ## 🛠️ Technology Stack
 
 * **Backend:** Python, Flask, SQLAlchemy
+* **Authentication：** OAuth
 * **Frontend:** HTML, CSS, JavaScript, Chart.js, Quarto
 * **Database:** PostgreSQL (for production), SQLite (for local development)
 * **AI Model:** Google Gemini 1.5 Flash
@@ -48,13 +49,23 @@ The project is structured into two main components: a Flask backend and a Quarto
 ```
 /AI_BIOSTATS_TUTOR_PROJECT/
 ├── 📁 flask-backend/
-│   ├── app.py                 # Main Flask application logic
-│   ├── requirements.txt         # Python dependencies
-│   ├── questions.json           # Stores question details (title, text, image)
-│   ├── .env                     # Stores secret keys (API key, DB URI)
-│   ├── google_credentials.json  # Google Service Account key
-│   └── 📁 prompts/
-│       └── chapter5_q8.txt      # AI prompts for specific questions
+│   ├── 📁 app/
+│        └── __init__.py           # Application factory (create_app) and plugin initialization
+│        └── models.py             # SQLAlchemy database models
+│        └── services.py           # Core business logic (AI calls, Google Sheets, etc.)
+│        └── 📁blueprints/      
+│            └── auth_views.py     # Authentication (OAuth) and page-rendering routes
+│            └── api.py            # All API routes (e.g., /api/evaluate)
+│    ├── 📁 migrations/             # Alembic database migration scripts
+│    ├── 📁 templates/
+│         └── dashboard.html      
+│         └── edit_problems.html
+│         └── login.html    
+│   ├── run.py                     # New application entry point
+│   ├── config.py                  # Configuration classes
+│   ├── .env                       # Environment variables (secret)
+│   ├── google_credentials.json    # Google Sheets service account key
+│   ├── requirements.txt           # Python dependencies
 │
 └── 📁 quarto-book/
     ├── index.qmd                # Example chapter with embedded widget
@@ -89,22 +100,30 @@ The project is structured into two main components: a Flask backend and a Quarto
 
 3.  **Configure Environment Variables:**
     Create a file named `.env` in the backend's root directory and add your secret keys.
-    ```ini
-    # For local development, use SQLite
-    DATABASE_URL="sqlite:///local_db.sqlite3"
+ ``ini
+4.  **For local development, use SQLitev**
+DATABASE_URL="sqlite:///local_db.sqlite3"
 
-    # API Keys and Credentials
-    GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
-    CLOUDINARY_CLOUD_NAME="YOUR_CLOUDINARY_CLOUD_NAME"
-    CLOUDINARY_API_KEY="YOUR_CLOUDINARY_API_KEY"
-    CLOUDINARY_API_SECRET="YOUR_CLOUDINARY_API_SECRET"
+**API Keys and Credentials**
+```bash
+GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+CLOUDINARY_CLOUD_NAME="YOUR_CLOUDINARY_CLOUD_NAME"
+CLOUDINARY_API_KEY="YOUR_CLOUDINARY_API_KEY"
+CLOUDINARY_API_SECRET="YOUR_CLOUDINARY_API_SECRET"
+```
+**OAuth Credentials (Example for Google)**
+You must create OAuth 2.0 credentials in your provider's console
+```bash
+GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="YOUR_GOOGLE_CLIENT_SECRET"
+SECRET_KEY="A_STRONG_RANDOM_SECRET_KEY_FOR_SESSIONS"
+```
 
-    # Credentials for the protected /create page
-    ADMIN_USER="your_admin_username"
-    ADMIN_PASS="your_strong_password"
-    ```
-    **Important:** Add `.env` to your `.gitignore` file to keep your keys secure.
-
+Important: Add `.env` to your `.gitignore` file to keep your keys secure.
+5.  **Initialize the database and run the first migration**
+```bash
+flask db upgrade
+```
 ## ▶️ Running the Project Locally
 
 You'll need **two separate terminals** running at the same time.
@@ -144,9 +163,14 @@ The project has two parts that are deployed independently.
 
 ### Backend Deployment (Render)
 
-1.  **Connect Repo to Render:** Connect the GitHub repository for your `flask-backend` to a new Web Service on Render.
-2.  **Set Environment Variables:** In the Render dashboard, go to the "Environment" section and add all the same keys from your `.env` file (`DATABASE_URL`, `GEMINI_API_KEY`, etc.). **Important:** For the `DATABASE_URL`, use the URL provided by Render's own PostgreSQL database service.
-3.  **Auto-Deploy:** Pushing any changes to your backend's GitHub repository will automatically trigger a new deployment on Render.
+1.  **Connect Repo to Render:**  Connect your GitHub repository to a new Web Service on Render.
+2.  **Set Build Command:** In Render's settings, ensure the build command includes running database migrations:
+     ```bash
+     pip install -r requirements.txt && flask db upgrade
+     ```
+3. **Set Start Command:** use ```bash gunicorn "app:create_app()" ```
+4.  **Set Environment Variables:** In the Render dashboard, go to the "Environment" section and add all the same keys from your `.env` file (`DATABASE_URL`, `GEMINI_API_KEY`, etc.). **Important:** For the `DATABASE_URL`, use the URL provided by Render's own PostgreSQL database service.
+5.  **Auto-Deploy:** Pushing any changes to your backend's GitHub repository will automatically trigger a new deployment on Render.
 
 ### Frontend Deployment (GitHub Pages)
 
