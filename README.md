@@ -4,7 +4,7 @@ An interactive learning platform that embeds AI-driven tutor widgets directly in
 
 ## Live Demonstrations 🚀
 
-* **Live Quarto Book:** [[https://jen77776.github.io/AI-Stats-book/](https://ybrandvain.github.io/biostats/)](https://ybrandvain.github.io/biostats/)
+* **Live Quarto Book:** [[https://jen77776.github.io/AI-Stats-book/]](https://ybrandvain.github.io/biostats/)
 * **Live Instructor Dashboard:** https://ai-stats-book.onrender.com/dashboard
 * **Live Question management page:** https://ai-stats-book.onrender.com/edit-problems
 
