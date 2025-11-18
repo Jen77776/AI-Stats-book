@@ -355,7 +355,7 @@ function renderRatingHistogram(data) {
         year: 'numeric', month: 'numeric', day: 'numeric',
         hour: 'numeric', minute: 'numeric', hour12: true
     };
-    return new Intl.DateTimeFormat('en-US', options).format(new Date(utcTimestamp));
+    return new Intl.DateTimeFormat('en-US', options).format(new Date(utcTimestamp + 'Z'));
 }
 </script>
 
