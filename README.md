@@ -3,7 +3,7 @@
 An interactive learning platform that embeds AI-driven tutor widgets directly into the Applied Biostatistics Quarto textbook. This project provides students with instant feedback and equips instructors with a powerful, secure, real-time analytics dashboard and a seamless question management system
 
 ## Live Demonstrations 🚀
-
+* **test Quarto Book:** [https://jen77776.github.io/AI-Stats-book/](https://jen77776.github.io/AI-Stats-book/)
 * **Live Quarto Book:** https://jen77776.github.io/AI-Stats-book/
 * **Live Instructor Dashboard:** https://ai-stats-book.onrender.com/dashboard
 * **Live Question management page:** https://ai-stats-book.onrender.com/edit-problems

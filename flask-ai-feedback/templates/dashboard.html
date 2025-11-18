@@ -141,7 +141,7 @@
                     }
                     tr.innerHTML = `
                         <td>${row.id}</td>
-                        <td>${new Date(row.timestamp).toLocaleString()}</td>
+                        <td>${formatToCentralTime(row.timestamp)}</td>
                         <td>${row.student_id || ''}</td>
                         <td>${answerCellContent}</td>
                         <td>${row.ai_feedback}</td>
@@ -348,6 +348,15 @@ function renderRatingHistogram(data) {
         populateProblemSelector();
         fetchAndDisplayFeedback();
     });
+    function formatToCentralTime(utcTimestamp) {
+    if (!utcTimestamp) return '';
+    const options = {
+        timeZone: 'America/Chicago', // 强制美国中部时间
+        year: 'numeric', month: 'numeric', day: 'numeric',
+        hour: 'numeric', minute: 'numeric', hour12: true
+    };
+    return new Intl.DateTimeFormat('en-US', options).format(new Date(utcTimestamp));
+}
 </script>
 
 </body>
